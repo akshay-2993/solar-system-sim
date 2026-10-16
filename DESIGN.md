@@ -1,65 +1,57 @@
-# Design system: the field notebook
+# Design system: the night-sky console
 
 <!-- impeccable:design-schema 1 -->
 
-The page is an astronomer's field notebook laid open around a window onto the real sky. The
-chrome is paper and ink; the sky is the only dark surface. Written from the built page.
+A deep-space console in blues and violets (the palette Akshay pinned): the sky is the page,
+and three quiet instrument panels sit around it. Written from the built page.
+
+## Layout
+
+Desktop (> 900 px): a three-column grid. Left, a vertical dock listing the Sun, the eight
+planets and the Moon with rendered thumbnails. Centre, the 3D sky with a time bar beneath it.
+Right, an always-visible facts panel for the selected body, so students read while they look.
+Narrow screens: top bar, sky, time bar, then the dock as a horizontal row; the facts panel
+slides up as a sheet from the ⓘ button at the end of the row.
 
 ## Colour
 
 | Token | Value | Job |
 |---|---|---|
-| `--cover` / `--cover-deep` | `#C8922A` / `#A3741C` | Header rail (the notebook cover), the sheet's top rule, help bullets, scrollbar thumb |
-| `--cover-ink` | `#2A2117` | Text on the cover rail |
-| `--paper` / `--paper-2` | `#F4EEE1` / `#EBE3D2` | Panel, sheets, tiles; hover fill |
-| `--rule` / `--rule-strong` | `#D9CFBB` / `#B9AD94` | Ruled lines on the panel, tile and stat dividers |
-| `--ink` / `--ink-70` | `#1B2233` / 72 % | All text, outlines, the play button, the selected tab |
-| `--graphite` | `#5B6170` | Stat labels, footnotes |
-| `--red` | `#C9372C` | Spent on three things only: the "now" pin on the time strip, the selected body, the eclipse stamp (plus TODAY and the playing state) |
-| `--sky` | `#05070D` | The 3D canvas and the scrim |
-
-Strategy: restrained, with the cover colour owning a whole region (the rail) so the palette is
-committed at page scale. Orbit rings in the sky are paper-coloured (`#E9DDC3`); the selected
-ring is warm red (`#F0A28A`).
+| `--space` / `--space-2` | `#070A1A` / `#0B1030` | Sky and panel grounds |
+| `--panel-solid` / `--panel` | `#121838` / 82 % | Sheets, labels, floating buttons |
+| `--line` / `--line-strong` | violet-white at 20 % / 42 % | Hairlines, outlines, dividers |
+| `--text` / `--muted` | `#EEF0FF` / `#A7AFDC` | Text and secondary text |
+| `--violet` / `--violet-deep` | `#8B7CFF` / `#5B4BDB` | Primary actions (play, speed tab), switch on, hover fills |
+| `--cyan` | `#5FE1FF` | Selection: the chosen body, Live, focus rings, kickers |
+| `--pink` | `#FF6BC9` | Time: the "now" pin and the eclipse finder; the eclipse badge is a pink-to-violet gradient |
+| gold `#FFB13D` | Sun only | The Sun icon, rating stars |
 
 ## Type
 
-- **Bricolage Grotesque** (variable, 800 for the title and card headings, 700 for the date stamp and stat figures). Letter-spacing −0.015 to −0.02 em on display sizes.
-- **Atkinson Hyperlegible** 400 / 700 for every control, paragraph and label. Chosen for readability by young students; its slashed zero is intentional.
-- Root size `clamp(14px, 0.42vw + 11px, 20px)` so every control scales from phones to 4K.
-- Tabular numerals everywhere (`font-variant-numeric: tabular-nums`).
-- Small labels (stat names, tags, TODAY, the stamp) are uppercase with 0.08–0.16 em tracking.
+- **Bricolage Grotesque** 800 for the title and body names in the facts panel, 700 for the date and stat figures.
+- **Atkinson Hyperlegible** 400 / 700 for controls, paragraphs, labels; chosen for readability by young students.
+- Root size `clamp(14px, 0.42vw + 11px, 20px)`; tabular numerals throughout; uppercase tracked kickers at 0.66–0.7 rem.
 
-## Surfaces and shape
+## Shape and surfaces
 
-- Buttons: 6 px radius, 1 px ink outline on paper, ink fill when selected; capsules (999 px) for the eclipse finder, the hover label and the switch.
-- Round 2.4 rem icon buttons with a 1.5 px outline (cover-ink on the rail, ink on paper).
-- Sheets rise from the bottom (14 px top radius) with a 3 px inset cover rule; centred dialogs for Help.
-- Shadows always carry an offset and blur: `0 2px 6px ink/18 %, 0 12px 28px ink/16 %`.
-- The panel's ground is ruled every 1.5 rem with a red margin thread at the left.
+- Capsules (999 px) for every button and tab; 7 px radius for the tape, date box and stat tiles; 10–16 px for sheets.
+- Hairline outlines on dark fills; the selected dock item gets a cyan ring plus a soft glow.
+- Shadows always offset and blurred; the play button carries a violet glow.
 
 ## Signature move
 
-The timeline is a ruled logbook strip: a canvas draws 1-device-pixel ticks (minor every 12 px,
-major every 72 px) sliding under a fixed red pin; Day / Month / Year are index tabs that change
-tick density and speed. The eclipse badge is a red rubber stamp, slightly rotated.
+The time strip is a ruled tape sliding under a pink pin, with Day / Month / Year changing its
+density; "Live" shows the model is following the real clock to the minute.
 
 ## Motion
 
-- Exponential ease-out (`cubic-bezier(0.16, 1, 0.3, 1)`), 160 ms for state, 320 ms for sheets.
-- One overshoot, kept on purpose: the orbit-paths chip crosses the track with a small bounce.
-- Camera flights: 1.5–1.6 s smootherstep splines; 1 ms under `prefers-reduced-motion`, which also disables sheet animation.
+Exponential ease-out (`cubic-bezier(0.16, 1, 0.3, 1)`), 160 ms for state and 320 ms for sheets;
+camera flights 1.5–1.6 s; everything 1 ms under `prefers-reduced-motion`.
 
 ## Responsive rules
 
-- Grid rows: rail / sky / notebook. The sky always takes the remaining height.
-- ≤ 640 px: subtitle hidden, tighter controls, 4.4 rem tiles, the body row scrolls with snap.
-- ≤ 380 px: the orbit switch drops to its own line.
-- ≤ 460 px tall (landscape phones): rail and panel compress, tiles become horizontal chips, the sky keeps ≥ 180 px.
-- ≥ 1400 px: tiles centre in the row.
-- Every grid/flex child has `min-width: 0` so the body row can never widen the page.
-
-## Browser surfaces
-
-Selection is cover-on-cover-ink, focus rings are 2 px red, the body-row scrollbar is a thin
-cover-coloured thumb, dialogs trap focus on their first control.
+- ≤ 900 px: single column; dock becomes a scroll-snap row; facts panel becomes a sheet; help becomes an icon.
+- ≤ 480 px: tighter tools and tiles.
+- ≤ 460 px tall: compact rail, horizontal chips in the dock, clock hidden.
+- ≥ 1600 px: wider facts column and larger thumbnails.
+- Every grid child has `min-width: 0` so content can never widen the page.

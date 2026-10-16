@@ -10,10 +10,9 @@ export const tToDate = (t) => new Date(J2000_MS + 864e5 * t);
 export const T_MIN = dateToT(new Date(Date.UTC(1900, 0, 1)));
 export const T_MAX = dateToT(new Date(Date.UTC(2100, 11, 31)));
 export const clampT = (t) => Math.min(T_MAX, Math.max(T_MIN, t));
-export const todayT = () => {
-  const now = new Date();
-  return dateToT(new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 12)));
-};
+// The real current instant, so Earth's day side matches the clock.
+export const nowT = () => dateToT(new Date());
+export const todayT = nowT;
 
 const wrap = (a) => ((a % TAU) + TAU) % TAU;
 const wrapSigned = (a) => { const w = wrap(a); return w > Math.PI ? w - TAU : w; };

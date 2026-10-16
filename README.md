@@ -42,12 +42,12 @@ The site appears at `https://<you>.github.io/solar-system-sim/` after the first 
 
 ## Controls
 
-- **Play / pause** runs time at the Day, Month or Year speed. **Today** snaps to the real date.
+- **Play / pause** runs time at the Day, Month or Year speed. **Now** jumps to the present moment and keeps the model on the real clock (the button reads **Live** while it follows).
 - **Time strip**: drag to scrub (arrow keys step one unit, Page Up / Page Down step ten).
 - **Find next eclipse** jumps to the next real solar or lunar eclipse and frames Earth and the Moon side-on.
 - **Orbit paths** hides or shows the orbit rings.
-- **Body row**: tap a planet for a close-up; Earth or Moon opens the Earth–Moon view, where the Moon can be dragged around Earth to change the date.
-- **ⓘ** opens the fact card for the selected body. **⋮** holds Mute, Help, Reset and Share.
+- **Body dock**: tap the Sun or a planet for a close-up; Earth or Moon opens the Earth–Moon view, where the Moon can be dragged around Earth to change the date.
+- The **facts panel** shows the selected body's numbers and a short description (on phones, open it with ⓘ). **⋮** holds Mute, Help, Reset and Share.
 - In the 3D view: drag to turn, scroll or pinch to zoom, tap a planet to select it.
 
 ## Project layout

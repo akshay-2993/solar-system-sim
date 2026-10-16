@@ -71,11 +71,16 @@ export const PLANET_BY_KEY = Object.fromEntries(PLANETS.map((p) => [p.key, p]));
 export const MOON_RADIUS_KM = 1737;
 
 // Row order: eight planets then the Moon.
-export const BODIES = [...PLANETS.map((p) => p.key), 'moon'];
-export const BODY_NAMES = { ...Object.fromEntries(PLANETS.map((p) => [p.key, p.name])), moon: 'Moon' };
+export const BODIES = ['sun', ...PLANETS.map((p) => p.key), 'moon'];
+export const BODY_NAMES = { sun: 'Sun', ...Object.fromEntries(PLANETS.map((p) => [p.key, p.name])), moon: 'Moon' };
+export const BODY_COLORS = { sun: '#FFB13D', moon: '#C9CDD8', ...Object.fromEntries(PLANETS.map((p) => [p.key, p.marker])) };
 
 // Info-card content. Stat values are the spec's numbers; the text is written for students.
 export const INFO = {
+  sun: {
+    stats: [['One spin', '25 days'], ['Size', '109× Earth'], ['Surface', '5,500 °C'], ['Planets', '8']],
+    text: 'Our star: a huge ball of glowing gas that holds 99.8% of all the mass in the solar system. Its gravity keeps every planet on its path, and its light and heat drive the weather and life on Earth. The dark patches are sunspots, cooler areas of strong magnetism.',
+  },
   mercury: {
     stats: [['One year', '88 days'], ['Distance', '0.39 AU'], ['Size', '0.38× Earth'], ['Moons', '0']],
     text: 'The smallest planet and the closest to the Sun. Its grey, cratered surface looks a lot like our Moon. With almost no air to hold heat in, days are scorching and nights are freezing.',
@@ -132,7 +137,7 @@ export const HELP = {
     'This is a 3D model of the solar system tied to the real calendar. Pick any date and each planet appears where it truly is. Open Earth or the Moon to see the Moon’s phases and eclipses up close.',
   points: [
     'Press play to let time run, or drag the strip at the bottom to move through time by hand. Day, Month and Year set how fast time moves, and Today jumps back to the real date.',
-    'Drag the sky to turn the view and scroll or pinch to zoom. Tap a planet for a close-up. Tapping Earth or the Moon opens the Earth–Moon view, where you can hold the Moon and pull it around Earth to change its phase day by day.',
+    'Drag the sky to turn the view and scroll or pinch to zoom. Tap the Sun or a planet for a close-up. Tapping Earth or the Moon opens the Earth–Moon view, where you can hold the Moon and pull it around Earth to change its phase day by day.',
     'Because the Moon’s orbit is tilted, it usually passes just above or below the straight line to the Sun. Find next eclipse jumps to the next real one: in a solar eclipse the Moon’s shadow falls on Earth, and in a lunar eclipse the Moon passes through Earth’s shadow.',
   ],
 };

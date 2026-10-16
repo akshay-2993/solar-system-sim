@@ -37,14 +37,14 @@ void main(){
   float cells = fbm(p*9.0 + warp*1.6 + vec3(0.0,t*0.6,0.0));
   float fine  = fbm(p*30.0 + warp*2.2 - vec3(t*0.4));
   float br = 0.18 + 0.75*cells + 0.3*fine;
-  float spots = fbm(p*2.4 + vec3(5.1,2.3,t*0.15));
-  float spotMask = smoothstep(0.33, 0.27, spots) * smoothstep(0.2, 0.4, fbm(p*1.1+vec3(2.0,7.0,1.0)));
+  float spots = fbm(p*8.5 + vec3(5.1,2.3,t*0.15));
+  float spotMask = smoothstep(0.29, 0.23, spots) * smoothstep(0.3, 0.5, fbm(p*1.3+vec3(2.0,7.0,1.0)));
   vec3 hot = vec3(1.0,0.97,0.82); vec3 mid = vec3(1.0,0.60,0.14); vec3 dark = vec3(0.42,0.11,0.02);
   float b = clamp(br,0.0,1.0);
   vec3 col = mix(mid, hot, b*b);
-  col = mix(col, dark, spotMask*0.7);
+  col = mix(col, dark, spotMask*0.5);
   float mu = clamp(dot(normalize(vN), normalize(vV)), 0.0, 1.0);
-  float limb = 0.32 + 0.68*pow(mu, 0.62);
+  float limb = 0.42 + 0.58*pow(mu, 0.55);
   col = mix(col*vec3(1.0,0.58,0.28), col, pow(mu,0.4));
   gl_FragColor = vec4(col*limb*1.3, 1.0);
 }`;
@@ -82,11 +82,11 @@ export class SolarScene {
     this.canvas = canvas;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.06;
+    this.renderer.toneMappingExposure = 1.3;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x05070d);
-    this.camera = new THREE.PerspectiveCamera(38, 1, 0.01, 400);
+    this.scene.background = new THREE.Color(0x070a1a);
+    this.camera = new THREE.PerspectiveCamera(31, 1, 0.01, 400);
     this.camera.position.set(6.8, 6.2, 17.2);
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
@@ -111,6 +111,8 @@ export class SolarScene {
     this.moonRing = 3.2 * this.earthRadius;
     this.eclipse = null;
     this.eclipseStrength = 0;
+    this.sunPos = new THREE.Vector3(0, 0, 0);
+    this.sunScreenRadius = 0;
 
     this._buildLights();
     this._buildSun();
@@ -122,20 +124,20 @@ export class SolarScene {
   }
 
   _buildLights() {
-    this.sunLight = new THREE.PointLight(0xffedc4, 2.6, 0, 0);
+    this.sunLight = new THREE.PointLight(0xfff1d6, 3.4, 0, 0);
     this.scene.add(this.sunLight);
-    this.scene.add(new THREE.AmbientLight(0x2a3346, 0.35));
+    this.scene.add(new THREE.HemisphereLight(0x5a6aa8, 0x1a1630, 0.75));
   }
 
   _buildSun() {
     this.sunMat = new THREE.ShaderMaterial({ uniforms: { uTime: { value: 0 } }, vertexShader: SUN_VERT, fragmentShader: SUN_FRAG, toneMapped: false });
     this.sun = new THREE.Mesh(new THREE.SphereGeometry(0.5, 72, 48), this.sunMat);
     this.scene.add(this.sun);
-    const glowTex = proc.glowTexture(256, 0.0, 1.7);
-    const g1 = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffc46a, transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending }));
-    g1.scale.setScalar(1.9);
-    const g2 = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xff7a2e, transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending }));
-    g2.scale.setScalar(3.4);
+    const glowTex = proc.glowTexture(256, 0.0, 2.6);
+    const g1 = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffc46a, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
+    g1.scale.setScalar(2.2);
+    const g2 = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xff8a3e, transparent: true, opacity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending }));
+    g2.scale.setScalar(4.2);
     this.scene.add(g1, g2);
     this.sunGlows = [g1, g2];
   }
@@ -167,8 +169,8 @@ export class SolarScene {
       const mat = new THREE.PointsMaterial({ size, color, transparent: true, opacity, depthWrite: false, sizeAttenuation: true });
       return new THREE.Points(geo, mat);
     };
-    this.scene.add(belt(3200, 2.1, 3.3, 0.01, 0.5, 0xcfc3ad, 1234));
-    this.scene.add(belt(2400, 30, 50, 0.02, 0.22, 0xa9b4cc, 999));
+    this.scene.add(belt(3200, 2.1, 3.3, 0.012, 0.6, 0xd8d2e8, 1234));
+    this.scene.add(belt(2400, 30, 50, 0.024, 0.3, 0xb4c0e8, 999));
   }
 
   _planetMaterial(p) {
@@ -238,7 +240,7 @@ export class SolarScene {
       // Orbit ring
       const pts = astro.orbitPoints(p, 360).map((v) => new THREE.Vector3(v.x, v.y, v.z));
       const og = new THREE.BufferGeometry().setFromPoints(pts);
-      const om = new THREE.LineBasicMaterial({ color: 0xe9ddc3, transparent: true, opacity: 0.22, depthWrite: false });
+      const om = new THREE.LineBasicMaterial({ color: 0xbfc8ff, transparent: true, opacity: 0.3, depthWrite: false });
       const orbit = new THREE.LineLoop(og, om);
       this.scene.add(orbit);
 
@@ -261,7 +263,7 @@ export class SolarScene {
 
     const pts = [];
     for (let i = 0; i < 256; i += 1) { const a = (i / 256) * Math.PI * 2; pts.push(new THREE.Vector3(Math.cos(a), 0, Math.sin(a))); }
-    this.moonOrbit = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xe9ddc3, transparent: true, opacity: 0.35, depthWrite: false }));
+    this.moonOrbit = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xbfc8ff, transparent: true, opacity: 0.45, depthWrite: false }));
     this.scene.add(this.moonOrbit);
     this.moonMarker = new THREE.Sprite(new THREE.SpriteMaterial({ map: proc.markerTexture(64), color: 0xd8dce6, transparent: true, opacity: 0.9, depthWrite: false }));
     this.scene.add(this.moonMarker);
@@ -367,10 +369,12 @@ export class SolarScene {
       // Orbit ring opacity
       const sel = this.selectedKey === key || (this.selectedKey === 'moon' && key === 'earth');
       e.orbit.visible = this.orbitPathsVisible;
-      e.orbit.material.opacity = inPlanetView ? (sel ? 0.16 : 0.045) : (sel ? 0.58 : 0.22);
-      e.orbit.material.color.set(sel ? 0xf0a28a : 0xe9ddc3);
+      e.orbit.material.opacity = inPlanetView ? (sel ? 0.2 : 0.06) : (sel ? 0.7 : 0.3);
+      e.orbit.material.color.set(sel ? 0x8ff0ff : 0xbfc8ff);
     }
     this._updateMoon(t, fovTan);
+    const sd = cam.position.distanceTo(this.sunPos);
+    this.sunScreenRadius = (0.5 / (sd * fovTan)) * (this.height / 2);
   }
 
   _updateMoon(t, fovTan) {
@@ -392,7 +396,7 @@ export class SolarScene {
     const axis = new THREE.Vector3(Math.cos(m.nodeAngle), 0, Math.sin(m.nodeAngle));
     this.moonOrbit.setRotationFromAxisAngle(axis, astro.MOON_INCLINATION);
     this.moonOrbit.visible = this.orbitPathsVisible && this.viewMode === 'planet';
-    this.moonOrbit.material.opacity = this.selectedKey === 'moon' ? 0.6 : 0.35;
+    this.moonOrbit.material.opacity = this.selectedKey === 'moon' ? 0.75 : 0.45;
     // Moon marker (visible only when the Moon is tiny on screen, i.e. near views of Earth)
     const dist = this.camera.position.distanceTo(this.moonPos);
     const halfH = dist * fovTan;
@@ -447,10 +451,12 @@ export class SolarScene {
   }
 
   bodyWorldPosition(key) {
+    if (key === 'sun') return this.sunPos;
     if (key === 'moon') return this.moonPos;
     return this.planets.get(key)?.pos ?? null;
   }
   bodyRadius(key) {
+    if (key === 'sun') return 0.5;
     if (key === 'moon') return this.moonRadius;
     return this.planets.get(key)?.radius ?? 0;
   }
@@ -475,6 +481,7 @@ export class SolarScene {
       if (d < hitR && d < bestD) { best = key; bestD = d; }
     };
     for (const [key, e] of this.planets) test(key, e.pos, e.screenRadius);
+    test('sun', this.sunPos, this.sunScreenRadius);
     if (includeMoon) test('moon', this.moonPos, this.moonScreenRadius);
     return best;
   }
@@ -520,7 +527,10 @@ export class Thumbnailer {
     this.renderer.setSize(size, size, false);
     const m = this.main;
     let mesh;
-    if (key === 'moon') {
+    if (key === 'sun') {
+      mesh = new THREE.Mesh(this.geo, m.sunMat);
+      mesh.rotation.y = 0.8;
+    } else if (key === 'moon') {
       mesh = new THREE.Mesh(this.geo, m.moonMat.clone());
       mesh.material.color.set(0xffffff);
       mesh.rotation.y = -Math.PI / 2 + Math.PI; // near side toward the viewer
@@ -542,12 +552,11 @@ export class Thumbnailer {
       }
       if (e.rings) {
         const rings = e.rings.clone();
-        rings.rotation.set(-Math.PI / 2 + 0.45, 0, 0.1);
+        rings.rotation.set(-Math.PI / 2 + 0.62, 0, 0.18);
         mesh.add(rings);
-        this.camera.position.set(0, 0, 9.6);
       }
     }
-    if (!(key === 'saturn')) this.camera.position.set(0, 0, 5.4);
+    this.camera.position.set(0, 0, key === 'saturn' ? 7.4 : 5.4);
     this.holder.add(mesh);
     if (lightAngle !== null) {
       // Light from the direction of the Sun as seen from the Moon: angle 0 = behind viewer (full), PI = behind the Moon (new).

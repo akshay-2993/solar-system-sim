@@ -11,7 +11,7 @@ export function systemPreset(aspect) {
   const a = { position: SYSTEM_BASE.clone().multiplyScalar(tall), target: new THREE.Vector3(0, 0, 0) };
   if (aspect <= 0.9) return a;
   const n = Math.max(0, 1.8 - aspect);
-  const shift = new THREE.Vector3(0.82 * (3.61 + (aspect < 1.8 ? 3.267 * n : 0)), 0, 0);
+  const shift = new THREE.Vector3(0.6 * (3.61 + (aspect < 1.8 ? 3.267 * n : 0)), 0, 0);
   const b = { position: WIDE_BASE.clone().multiplyScalar(aspect >= 1.8 ? 2.07 / aspect : 1.15 + 1.567 * n).add(shift), target: shift };
   if (aspect >= 1.2) return b;
   const s = smootherstep((aspect - 0.9) / 0.3);
@@ -19,10 +19,13 @@ export function systemPreset(aspect) {
 }
 
 // Close-up preset: on the Sun-facing side, 7° above the orbital plane.
-export function planetPreset(key, radius, worldPos, side = 1) {
+export function planetPreset(key, radius, worldPos, side = 1, fromDir = null) {
   const saturn = key === 'saturn';
+  const elevation = saturn ? THREE.MathUtils.degToRad(22) : ELEVATION;
   const r = new THREE.Vector3(-worldPos.x, -worldPos.y, -worldPos.z);
-  if (r.lengthSq() === 0) r.set(0, 0, 1); else r.normalize();
+  // The Sun sits at the origin: approach it from wherever the camera already is.
+  if (r.lengthSq() === 0) { if (fromDir) r.copy(fromDir).setY(0); if (r.lengthSq() === 0) r.set(0, 0, 1); }
+  r.normalize();
   let dir;
   if (side === 0) {
     // Profile view: perpendicular to the Sun line, raised 18°, so Sun, Moon and planet line up across the screen.
@@ -33,7 +36,7 @@ export function planetPreset(key, radius, worldPos, side = 1) {
     r.multiplyScalar(side);
     const up = new THREE.Vector3(0, 1, 0).addScaledVector(r, -r.y);
     if (up.lengthSq() === 0) up.set(0, 0, 1); else up.normalize();
-    dir = r.multiplyScalar(Math.cos(ELEVATION)).addScaledVector(up, Math.sin(ELEVATION)).normalize();
+    dir = r.multiplyScalar(Math.cos(elevation)).addScaledVector(up, Math.sin(elevation)).normalize();
   }
   return {
     offset: dir.multiplyScalar(radius * (saturn ? 9 : 7.6)),
@@ -95,7 +98,7 @@ export class CameraRig {
   flyToBody(key, radius, getFocus, { side = 1 } = {}) {
     const kind = this.focusKey === key ? 'reframe' : this.focusKey ? 'planet-to-planet' : 'system-to-planet';
     const pos = getFocus();
-    const preset = planetPreset(key, radius, pos, side);
+    const preset = planetPreset(key, radius, pos, side, this.camera.position.clone().sub(this.controls.target));
     this.focusKey = key;
     this.focusOffset.copy(preset.offset);
     this.limits = { min: preset.minDistance, max: preset.maxDistance };
@@ -105,9 +108,16 @@ export class CameraRig {
 
   // Keep the same framing relative to a focus that moved (reframe on resize in system view).
   reframeSystem(aspect) {
-    if (this.focusKey || this.plan || this.userMoved) { this.aspect = aspect; return; }
     this.aspect = aspect;
     const preset = systemPreset(aspect);
+    // A flight back to the overview retargets to the preset for the new aspect.
+    if (this.plan && !this.plan.getFocus && this.plan.toPosition) {
+      this.plan.toPosition.copy(preset.position);
+      this.plan.toTarget.copy(preset.target);
+      if (this.plan.waypoints) this.plan.waypoints[this.plan.waypoints.length - 1].copy(preset.position);
+      return;
+    }
+    if (this.focusKey || this.plan || this.userMoved) return;
     this.camera.position.copy(preset.position);
     this.controls.target.copy(preset.target);
   }

@@ -157,16 +157,16 @@ export function saturnRingTexture() {
     const r = u; // 0 = inner edge, 1 = outer edge
     let alpha = 0.85;
     // Broad structure: C ring (faint), B ring (bright), Cassini division, A ring, Encke gap.
-    if (r < 0.2) alpha = 0.25 + 0.15 * r;
-    else if (r < 0.69) alpha = 0.9;
-    else if (r < 0.765) alpha = 0.08;
-    else if (r < 0.95) alpha = 0.7;
-    else alpha = 0.35 * (1 - (r - 0.95) / 0.05);
+    if (r < 0.2) alpha = 0.4 + 0.3 * r;
+    else if (r < 0.69) alpha = 0.97;
+    else if (r < 0.765) alpha = 0.12;
+    else if (r < 0.95) alpha = 0.88;
+    else alpha = 0.5 * (1 - (r - 0.95) / 0.05);
     if (r > 0.915 && r < 0.925) alpha *= 0.15;
     const fine = fbm(noise, r * 160, 0.5, 100000, 4) - 0.5;
-    alpha = clamp01(alpha * (1 + fine * 0.9));
+    alpha = clamp01(alpha * (1 + fine * 0.6));
     const shade = 0.75 + fine * 0.5;
-    const c = mixRGB([196, 176, 140], [238, 226, 198], clamp01(shade));
+    const c = mixRGB([214, 198, 164], [250, 242, 220], clamp01(shade));
     return [c[0], c[1], c[2], Math.round(alpha * 255)];
   });
   const tex = toTexture(canvas);
@@ -271,9 +271,9 @@ export function starField(count = 9000, radius = 140) {
     const mag = Math.pow(rnd(), 2.2);
     const warm = rnd();
     const c = warm < 0.2 ? [1, 0.82, 0.68] : warm < 0.75 ? [0.95, 0.96, 1] : [0.72, 0.82, 1];
-    const b = 0.35 + mag * 0.65;
+    const b = 0.5 + mag * 0.7;
     col[i * 3] = c[0] * b; col[i * 3 + 1] = c[1] * b; col[i * 3 + 2] = c[2] * b;
-    sizes[i] = 0.5 + mag * 1.8;
+    sizes[i] = 0.7 + mag * 2.2;
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));

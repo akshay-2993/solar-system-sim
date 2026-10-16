@@ -1,5 +1,5 @@
-// DOM wiring for the notebook panel, sheets and overlays.
-import { BODIES, BODY_NAMES, PLANET_BY_KEY, INFO, FOOTNOTE, PHASE_NAMES, HELP, APP_DESCRIPTION } from './data.js';
+// DOM wiring: dock of bodies, time bar, facts panel, sheets and overlays.
+import { BODIES, BODY_NAMES, BODY_COLORS, INFO, FOOTNOTE, PHASE_NAMES, HELP, APP_DESCRIPTION } from './data.js';
 import * as astro from './astro.js';
 import * as sound from './sound.js';
 
@@ -9,12 +9,15 @@ export const GRANULARITY = {
   year: { rate: 365, density: 0.8, step: 365.25 },
 };
 
-const shortDate = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
-const longDate = new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const shortDate = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+const longDate = new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+const clock = new Intl.DateTimeFormat('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZoneName: 'short' });
 export const formatShort = (t) => shortDate.format(astro.tToDate(t));
 export const formatLong = (t) => longDate.format(astro.tToDate(t));
+export const formatClock = (t) => clock.format(astro.tToDate(t));
 
 const $ = (id) => document.getElementById(id);
+const KIND = { sun: 'Star', moon: "Earth's moon" };
 // A shaded disc in the body's colour, shown until the real thumbnail is rendered.
 const discPlaceholder = (color) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><defs><radialGradient id="g" cx="35%" cy="32%" r="70%"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".6" stop-color="${color}" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient></defs><circle cx="24" cy="24" r="24" fill="${color}"/><circle cx="24" cy="24" r="24" fill="url(#g)"/></svg>`)}`;
@@ -26,17 +29,18 @@ export class UI {
     this.el = {
       app: $('app'), stage: $('stage'), sky: $('sky'), loading: $('loading'),
       btnBack: $('btnBack'), badge: $('eclipseBadge'), hoverLabel: $('hoverLabel'), pinEarth: $('pinLabelEarth'), pinMoon: $('pinLabelMoon'),
-      btnPlay: $('btnPlay'), tape: $('tape'), tapeCanvas: $('tapeCanvas'), dateOut: $('dateOut'), btnToday: $('btnToday'),
+      btnPlay: $('btnPlay'), tape: $('tape'), tapeCanvas: $('tapeCanvas'), dateOut: $('dateOut'), timeOut: $('timeOut'), btnToday: $('btnToday'),
       tabs: Array.from(document.querySelectorAll('.tab')), btnEclipse: $('btnEclipse'), chkOrbits: $('chkOrbits'),
       bodies: $('bodies'), btnInfo: $('btnInfo'),
-      infoSheet: $('infoSheet'), infoTitle: $('infoTitle'), infoImage: $('infoImage'), infoCaption: $('infoCaption'), infoPhase: $('infoPhase'), infoStats: $('infoStats'), infoText: $('infoText'), infoNote: $('infoNote'),
+      facts: $('facts'), factsScrim: $('factsScrim'), infoKind: $('infoKind'), infoTitle: $('infoTitle'), infoImage: $('infoImage'), infoCaption: $('infoCaption'), infoPhase: $('infoPhase'), infoStats: $('infoStats'), infoText: $('infoText'), infoNote: $('infoNote'),
       menuSheet: $('menuSheet'), menuDescription: $('menuDescription'), miMute: $('miMute'), miMuteText: $('miMuteText'), miHelp: $('miHelp'), miReset: $('miReset'), miShare: $('miShare'),
       helpSheet: $('helpSheet'), helpIntro: $('helpIntro'), helpList: $('helpList'),
       rateSheet: $('rateSheet'), stars: $('stars'), btnSendRating: $('btnSendRating'), rateThanks: $('rateThanks'),
-      btnRate: $('btnRate'), btnMenu: $('btnMenu'), btnClose: $('btnClose'), toast: $('toast'),
+      btnHelp: $('btnHelp'), btnRate: $('btnRate'), btnMenu: $('btnMenu'), btnClose: $('btnClose'), toast: $('toast'),
     };
     this.tapeCtx = this.el.tapeCanvas.getContext('2d');
     this.rating = 0;
+    this.narrow = window.matchMedia('(max-width: 900px)');
     this._buildBodies();
     this._buildStaticText();
     this._wire();
@@ -56,8 +60,7 @@ export class UI {
       img.className = 'body__img';
       img.alt = '';
       img.width = 48; img.height = 48;
-      const dot = key === 'moon' ? '#b9bcc4' : PLANET_BY_KEY[key].marker;
-      img.src = discPlaceholder(dot);
+      img.src = discPlaceholder(BODY_COLORS[key]);
       const name = document.createElement('span');
       name.className = 'body__name';
       name.textContent = BODY_NAMES[key];
@@ -91,12 +94,13 @@ export class UI {
   _wire() {
     const { el, actions } = this;
     el.btnPlay.addEventListener('click', () => { sound.click(); actions.togglePlay(); });
-    el.btnToday.addEventListener('click', () => { sound.click(); actions.setTime(astro.todayT()); });
+    el.btnToday.addEventListener('click', () => { sound.click(); actions.goLive(); });
     el.tabs.forEach((tab) => tab.addEventListener('click', () => { sound.click(); actions.setGranularity(tab.dataset.gran); }));
     el.btnEclipse.addEventListener('click', () => { sound.click(); actions.findNextEclipse(); });
     el.chkOrbits.addEventListener('change', () => { sound.click(); actions.setOrbitPaths(el.chkOrbits.checked); });
     el.btnBack.addEventListener('click', () => { sound.click(); actions.backToSystem(); });
-    el.btnInfo.addEventListener('click', () => { sound.click(); this.openInfo(); });
+    el.btnInfo.addEventListener('click', () => { sound.click(); this.openFacts(); });
+    el.btnHelp.addEventListener('click', () => { sound.click(); this.openSheet(el.helpSheet); });
     el.btnMenu.addEventListener('click', () => { sound.click(); this.openSheet(el.menuSheet); });
     el.btnRate.addEventListener('click', () => { sound.click(); this.openSheet(el.rateSheet); });
     el.btnClose.addEventListener('click', () => { sound.click(); actions.closeApp(); });
@@ -106,7 +110,10 @@ export class UI {
     el.miShare.addEventListener('click', () => { sound.click(); actions.share(); });
     el.btnSendRating.addEventListener('click', () => { sound.click(); el.rateThanks.hidden = false; el.btnSendRating.disabled = true; setTimeout(() => this.closeSheets(), 900); });
     document.querySelectorAll('[data-close]').forEach((n) => n.addEventListener('click', () => { sound.click(); this.closeSheets(); }));
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') this.closeSheets(); });
+    document.querySelectorAll('[data-close-facts]').forEach((n) => n.addEventListener('click', () => { sound.click(); this.closeFacts(); }));
+    el.factsScrim.addEventListener('click', () => this.closeFacts());
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { this.closeSheets(); this.closeFacts(); } });
+    this.narrow.addEventListener('change', () => this.closeFacts());
 
     // Scrub tape: drag moves time (drag right = earlier). A click without a drag does nothing.
     const tape = el.tape;
@@ -122,7 +129,7 @@ export class UI {
       drag.moved = true;
       actions.setTime(drag.t - dx / GRANULARITY[this.state.granularity].density, { scrubbing: true });
     });
-    const endDrag = (e) => { if (drag && e.pointerId === drag.id) { drag = null; actions.scrubEnd?.(); } };
+    const endDrag = (e) => { if (drag && e.pointerId === drag.id) drag = null; };
     tape.addEventListener('pointerup', endDrag);
     tape.addEventListener('pointercancel', endDrag);
     tape.addEventListener('keydown', (e) => {
@@ -147,21 +154,32 @@ export class UI {
     this.closeSheets();
     sheet.hidden = false;
     this._lastFocus = document.activeElement;
-    const first = sheet.querySelector('button:not([disabled]), [tabindex]');
-    first?.focus({ preventScroll: true });
+    sheet.querySelector('button:not([disabled]), [tabindex]')?.focus({ preventScroll: true });
   }
   closeSheets() {
     let any = false;
-    for (const s of [this.el.infoSheet, this.el.menuSheet, this.el.helpSheet, this.el.rateSheet]) { if (!s.hidden) any = true; s.hidden = true; }
+    for (const s of [this.el.menuSheet, this.el.helpSheet, this.el.rateSheet]) { if (!s.hidden) any = true; s.hidden = true; }
     if (any) this._lastFocus?.focus?.({ preventScroll: true });
-    this.infoOpen = false;
   }
-  isSheetOpen() { return [this.el.infoSheet, this.el.menuSheet, this.el.helpSheet, this.el.rateSheet].some((s) => !s.hidden); }
+  // The facts panel is always visible on wide screens; on narrow screens it slides up as a sheet.
+  openFacts() {
+    if (!this.narrow.matches) return;
+    this.el.facts.classList.add('open');
+    this.el.factsScrim.hidden = false;
+    this.el.facts.querySelector('.facts__close')?.focus({ preventScroll: true });
+  }
+  closeFacts() {
+    if (!this.el.facts.classList.contains('open')) return;
+    this.el.facts.classList.remove('open');
+    this.el.factsScrim.hidden = true;
+    this.el.btnInfo.focus({ preventScroll: true });
+  }
 
-  openInfo() {
-    const key = this.state.selected;
-    if (!key) return;
+  // Fill the facts panel for the selected body.
+  showFacts(key) {
     const info = INFO[key];
+    this.factsKey = key;
+    this.el.infoKind.textContent = KIND[key] ?? 'Planet';
     this.el.infoTitle.textContent = BODY_NAMES[key];
     this.el.infoText.textContent = info.text;
     this.el.infoStats.replaceChildren(...info.stats.map(([k, v]) => {
@@ -172,16 +190,14 @@ export class UI {
       return d;
     }));
     this.el.infoCaption.hidden = key !== 'moon';
-    this.infoOpen = true;
-    this.infoKey = key;
-    this.refreshInfo(true);
-    this.openSheet(this.el.infoSheet);
+    this._phaseBucket = null;
+    this.refreshFacts(true);
   }
 
-  // Live parts of the info card (Moon phase image + illumination).
-  refreshInfo(force = false) {
-    if (!this.infoOpen) return;
-    const key = this.infoKey;
+  // Live parts of the facts panel (Moon phase image and illumination), plus late-arriving previews.
+  refreshFacts(force = false) {
+    const key = this.factsKey;
+    if (!key) return;
     if (key === 'moon') {
       const t = this.state.t;
       const idx = astro.moonPhaseIndex(t);
@@ -191,12 +207,13 @@ export class UI {
       if (dd) dd.textContent = `${illum}%`;
       const bucket = Math.round(astro.moonElongation(t) * 40);
       if (force || bucket !== this._phaseBucket) {
-        this._phaseBucket = bucket;
-        this.el.infoImage.src = this.actions.renderPreview('moon', { lightAngle: astro.moonElongation(t) });
+        const url = this.actions.renderPreview('moon', { lightAngle: astro.moonElongation(t) });
+        if (url) { this._phaseBucket = bucket; this.el.infoImage.src = url; }
       }
       this.el.infoImage.alt = `The Moon as seen from Earth: ${PHASE_NAMES[idx]}, ${illum}% lit.`;
-    } else if (force) {
-      this.el.infoImage.src = this.actions.renderPreview(key);
+    } else if (force || !this._previewDone) {
+      const url = this.actions.renderPreview(key);
+      if (url) { this.el.infoImage.src = url; this._previewDone = true; }
       this.el.infoImage.alt = `${BODY_NAMES[key]} close-up`;
     }
   }
@@ -206,12 +223,19 @@ export class UI {
       const b = this.bodyButtons.get(key);
       if (b) b.querySelector('img').src = url;
     }
+    this._previewDone = false;
+    this.refreshFacts(true);
   }
 
   // ---- State painting ----
   paintPlay(playing) {
     this.el.btnPlay.setAttribute('aria-pressed', String(playing));
     this.el.btnPlay.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+  }
+  paintLive(live) {
+    this.el.btnToday.setAttribute('aria-pressed', String(live));
+    this.el.btnToday.textContent = live ? 'Live' : 'Now';
+    this.el.btnToday.title = live ? 'Following the real clock' : 'Jump to the present moment';
   }
   paintGranularity(g) {
     this.el.tabs.forEach((tab) => tab.setAttribute('aria-pressed', String(tab.dataset.gran === g)));
@@ -221,7 +245,8 @@ export class UI {
     for (const [k, b] of this.bodyButtons) b.setAttribute('aria-selected', String(k === key));
     const b = this.bodyButtons.get(key);
     if (b && scroll) b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-    this.el.btnInfo.disabled = !key;
+    this._previewDone = false;
+    this.showFacts(key);
   }
   paintView(view) {
     this.el.app.dataset.view = view;
@@ -230,8 +255,10 @@ export class UI {
   paintDate(t) {
     const s = formatShort(t);
     if (s !== this._lastDate) { this._lastDate = s; this.el.dateOut.textContent = s; }
+    const c = formatClock(t);
+    if (c !== this._lastClock) { this._lastClock = c; this.el.timeOut.textContent = c; }
     this.el.tape.setAttribute('aria-valuenow', t.toFixed(2));
-    this.el.tape.setAttribute('aria-valuetext', formatLong(t));
+    this.el.tape.setAttribute('aria-valuetext', `${formatLong(t)}, ${c}`);
     this.drawTape();
   }
   paintBadge(ev) {
@@ -279,20 +306,18 @@ export class UI {
     const dpr = this.tapeDpr, w = this.tapeW, h = this.tapeH;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
-    // ruled baseline
-    ctx.strokeStyle = 'rgba(27,34,51,0.18)';
+    ctx.strokeStyle = 'rgba(167,175,220,0.25)';
     ctx.lineWidth = 1 / dpr;
     ctx.beginPath(); ctx.moveTo(0, Math.round(h * 0.5) + 0.5 / dpr); ctx.lineTo(w, Math.round(h * 0.5) + 0.5 / dpr); ctx.stroke();
     const minor = 12, major = 72;
     const offset = -((t * density) % major);
     const centre = w / 2;
     const px = (x) => Math.round(x * dpr) / dpr + 0.5 / dpr;
-    ctx.lineWidth = 1 / dpr;
     for (let x = ((centre + offset) % minor) - minor; x < w + minor; x += minor) {
       const rel = Math.round((x - centre - offset) / minor);
       const isMajor = ((rel % 6) + 6) % 6 === 0;
       const len = isMajor ? h * 0.62 : h * 0.26;
-      ctx.strokeStyle = isMajor ? 'rgba(27,34,51,0.9)' : 'rgba(27,34,51,0.42)';
+      ctx.strokeStyle = isMajor ? 'rgba(238,240,255,0.95)' : 'rgba(167,175,220,0.5)';
       ctx.beginPath();
       ctx.moveTo(px(x), h / 2 - len / 2);
       ctx.lineTo(px(x), h / 2 + len / 2);

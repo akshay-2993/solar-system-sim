@@ -8,7 +8,8 @@ import * as astro from './astro.js';
 import * as sound from './sound.js';
 
 const state = {
-  t: astro.todayT(),
+  t: astro.nowT(),
+  live: true,          // follow the real clock while paused
   playing: false,
   granularity: 'month',
   orbitPaths: true,
@@ -28,8 +29,10 @@ const ui = new UI(state, {
   togglePlay() { setPlaying(!state.playing); },
   setTime(t, opts = {}) {
     state.t = astro.clampT(t);
+    setLive(false);
     if (opts.scrubbing && state.playing) setPlaying(false);
   },
+  goLive() { setPlaying(false); state.t = astro.nowT(); setLive(true); },
   setGranularity(g) { state.granularity = g; ui.paintGranularity(g); },
   setOrbitPaths(on) { state.orbitPaths = on; scene.setOrbitPaths(on); },
   selectBody(key) { selectBody(key); },
@@ -39,12 +42,15 @@ const ui = new UI(state, {
     if (!ev) { ui.toast('No more eclipses before 2100'); return; }
     setPlaying(false);
     state.t = ev.t;
+    setLive(false);
     // Frame Earth from the side so the Sun–Moon–Earth line reads across the screen.
     selectBody(state.selected === 'moon' ? 'moon' : 'earth', { side: 0, reframe: true });
   },
   reset() {
     setPlaying(false);
-    state.t = astro.todayT();
+    state.t = astro.nowT();
+    setLive(true);
+    ui.closeFacts();
     state.granularity = 'month'; ui.paintGranularity('month');
     state.orbitPaths = true; scene.setOrbitPaths(true); ui.paintOrbits(true);
     state.selected = 'earth'; scene.setSelected('earth'); ui.paintSelection('earth');
@@ -63,13 +69,19 @@ const ui = new UI(state, {
     window.close();
     setTimeout(() => { if (history.length > 1) history.back(); else ui.toast('Nothing to close here'); }, 80);
   },
-  renderPreview(key, opts) { return thumbs ? thumbs.render(key, 320, opts) : ''; },
+  renderPreview(key, opts) { return thumbs ? thumbs.render(key, 360, opts) : ''; },
   scrubEnd() {},
 });
 
 function setPlaying(p) {
   state.playing = p;
   ui.paintPlay(p);
+  if (p) setLive(false);
+}
+function setLive(l) {
+  if (state.live === l) return;
+  state.live = l;
+  ui.paintLive(l);
 }
 
 function focusPosition() {
@@ -146,7 +158,7 @@ canvas.addEventListener('pointermove', (e) => {
   const px = e.clientX - r.left, py = e.clientY - r.top;
   if (moonDrag && e.pointerId === moonDrag.id) {
     const phase = scene.moonDragPhase(px, py);
-    if (phase !== null) state.t = astro.clampT(astro.solveMoonTime(phase, state.t));
+    if (phase !== null) { state.t = astro.clampT(astro.solveMoonTime(phase, state.t)); setLive(false); }
     return;
   }
   if (pointerDown && e.pointerId === pointerDown.id) {
@@ -184,7 +196,11 @@ function frame(now) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
   let simDays = 0;
-  if (state.playing) {
+  if (state.live && !state.playing) {
+    const now = astro.nowT();
+    simDays = now - state.t;
+    state.t = now;
+  } else if (state.playing) {
     simDays = GRANULARITY[state.granularity].rate * dt;
     const next = state.t + simDays;
     if (next >= astro.T_MAX) { state.t = astro.T_MAX; setPlaying(false); }
@@ -198,7 +214,7 @@ function frame(now) {
   // Overlays
   ui.paintDate(state.t);
   ui.paintBadge(scene.eclipse && scene.eclipseStrength > 0 ? scene.eclipse : null);
-  ui.refreshInfo();
+  ui.refreshFacts();
   // hover
   let hover = null;
   if (lastMouse && !pointerDown && !moonDrag) hover = scene.pick(lastMouse.x, lastMouse.y, state.focus === 'earth');
@@ -216,6 +232,7 @@ function frame(now) {
 
 // ---- Boot ----
 ui.paintPlay(false);
+ui.paintLive(true);
 ui.paintGranularity(state.granularity);
 ui.paintSelection(state.selected, false);
 ui.paintView('system');
@@ -229,7 +246,7 @@ scene.load().then(() => {
   ui.setLoading(true);
   thumbs = new Thumbnailer(scene);
   const map = {};
-  for (const key of BODIES) map[key] = thumbs.render(key, 96, key === 'moon' ? { lightAngle: 0.2 } : {});
+  for (const key of BODIES) map[key] = thumbs.render(key, 112, key === 'moon' ? { lightAngle: 0.2 } : {});
   ui.setThumbnails(map);
   thumbsDone = true;
 }).catch((err) => {

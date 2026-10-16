@@ -3,40 +3,57 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="color-scheme" content="dark light" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#070a1a" />
   <meta name="description" content="A 3D model of the solar system that follows the real calendar, with Moon phases and eclipses." />
   <title>Our Solar System</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23C8922A'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%231B2233'/%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%231B2233' stroke-width='1.5'/%3E%3Ccircle cx='26.5' cy='12' r='2' fill='%23C9372C'/%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23121838'/%3E%3Ccircle cx='16' cy='16' r='4.5' fill='%23FFB13D'/%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%238B7CFF' stroke-width='1.5'/%3E%3Ccircle cx='26.5' cy='12' r='2' fill='%235FE1FF'/%3E%3C/svg%3E" />
 </head>
 <body>
   <div id="app" class="app" data-view="system">
-    <header class="rail">
-      <div class="rail__title">
-        <h1 id="appTitle">Our Solar System</h1>
-        <p id="appSubtitle" class="rail__sub">Planets, Moon phases and eclipses on the real calendar</p>
+    <header class="top">
+      <div class="brand">
+        <h1>Our Solar System</h1>
+        <p class="brand__sub">Planets, Moon phases and eclipses on the real calendar</p>
       </div>
-      <div class="rail__actions">
-        <button class="iconbtn" id="btnRate" type="button" aria-label="Rate this app" title="Rate">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.9l6-.8z"/></svg>
+      <div class="top__tools">
+        <label class="switch" for="chkOrbits">
+          <input type="checkbox" id="chkOrbits" checked />
+          <span class="switch__track" aria-hidden="true"><span class="switch__chip"></span></span>
+          <span class="switch__text">Orbit paths</span>
+        </label>
+        <button class="tool" id="btnHelp" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.6a2.4 2.4 0 1 1 3.4 2.2c-.7.4-1 .9-1 1.7M12 16.8v.2" stroke-linecap="round"/></svg>
+          <span>Help</span>
         </button>
-        <button class="iconbtn" id="btnMenu" type="button" aria-label="More options" aria-haspopup="dialog" title="More">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5.5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="18.5" r="1.9"/></svg>
+        <button class="tool tool--icon" id="btnRate" type="button" aria-label="Rate this app" title="Rate">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.9l6-.8z" stroke-linejoin="round"/></svg>
         </button>
-        <button class="iconbtn" id="btnClose" type="button" aria-label="Close the app" title="Close">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        <button class="tool tool--icon" id="btnMenu" type="button" aria-label="More options" aria-haspopup="dialog" title="More">
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="dots"><circle cx="12" cy="5.5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="18.5" r="1.9"/></svg>
+        </button>
+        <button class="tool tool--icon" id="btnClose" type="button" aria-label="Close the app" title="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>
         </button>
       </div>
     </header>
 
+    <nav class="dock" aria-label="Bodies">
+      <div class="dock__list" id="bodies" role="listbox" aria-label="Sun, planets and the Moon"></div>
+      <button class="tool tool--icon dock__info" id="btnInfo" type="button" aria-label="Facts about the selected body" title="Facts">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10.5v6M12 7.3v.2" stroke-linecap="round"/></svg>
+      </button>
+    </nav>
+
     <main class="stage" id="stage">
-      <canvas id="sky" aria-label="3D view of the solar system. Drag to turn, scroll or pinch to zoom, tap a planet to open it."></canvas>
+      <canvas id="sky" aria-label="3D view of the solar system. Drag to turn, scroll or pinch to zoom, tap a body to open it."></canvas>
       <div class="stage__loading" id="loading" role="status">
         <div class="loading__orbit" aria-hidden="true"><span></span></div>
         <p>Drawing the sky…</p>
       </div>
       <button class="backtab" id="btnBack" type="button" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6"/></svg>
-        <span>Back to system</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Whole system</span>
       </button>
       <div class="stamp" id="eclipseBadge" hidden role="status"></div>
       <div class="label" id="hoverLabel" hidden></div>
@@ -44,8 +61,8 @@
       <div class="label label--pinned" id="pinLabelMoon" hidden>Moon</div>
     </main>
 
-    <section class="book" aria-label="Time and planets">
-      <div class="book__time">
+    <section class="timebar" aria-label="Time">
+      <div class="timebar__row">
         <button class="play" id="btnPlay" type="button" aria-label="Play" aria-pressed="false">
           <svg class="play__icon play__icon--play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg>
           <svg class="play__icon play__icon--pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 5.5h3.4v13H7.5zM13.1 5.5h3.4v13h-3.4z"/></svg>
@@ -55,12 +72,14 @@
           <div class="tape__pin" aria-hidden="true"></div>
         </div>
         <div class="datebox">
-          <output class="datebox__date" id="dateOut" aria-live="off">—</output>
-          <button class="datebox__today" id="btnToday" type="button">Today</button>
+          <div class="datebox__stack">
+            <output class="datebox__date" id="dateOut" aria-live="off">—</output>
+            <output class="datebox__time" id="timeOut" aria-live="off">—</output>
+          </div>
+          <button class="datebox__today" id="btnToday" type="button" aria-pressed="true">Now</button>
         </div>
       </div>
-
-      <div class="book__controls">
+      <div class="timebar__row timebar__row--tools">
         <div class="tabs" role="group" aria-label="Time step">
           <button class="tab" type="button" data-gran="day">Day</button>
           <button class="tab" type="button" data-gran="month">Month</button>
@@ -70,41 +89,27 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><path d="M9.5 5.4a7.5 7.5 0 0 0 0 13.2A8.5 8.5 0 0 1 9.5 5.4z" class="fill"/></svg>
           <span>Find next eclipse</span>
         </button>
-        <label class="switch" for="chkOrbits">
-          <input type="checkbox" id="chkOrbits" checked />
-          <span class="switch__track" aria-hidden="true"><span class="switch__chip"></span></span>
-          <span class="switch__text">Orbit paths</span>
-        </label>
-      </div>
-
-      <div class="book__bodies">
-        <div class="bodies" id="bodies" role="listbox" aria-label="Planets and the Moon"></div>
-        <button class="iconbtn iconbtn--paper" id="btnInfo" type="button" aria-label="About the selected body" title="Info">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10.5v6M12 7.3v.2" stroke-linecap="round"/></svg>
-        </button>
       </div>
     </section>
-  </div>
 
-  <!-- Info card -->
-  <div class="sheet" id="infoSheet" role="dialog" aria-modal="true" aria-labelledby="infoTitle" hidden>
-    <div class="sheet__scrim" data-close></div>
-    <div class="sheet__card card">
-      <div class="card__head">
-        <h2 id="infoTitle">Earth</h2>
-        <button class="iconbtn iconbtn--paper" type="button" data-close aria-label="Close">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    <aside class="facts" id="facts" aria-labelledby="infoTitle">
+      <div class="facts__head">
+        <div>
+          <p class="facts__kicker" id="infoKind">Planet</p>
+          <h2 id="infoTitle">Earth</h2>
+        </div>
+        <button class="tool tool--icon facts__close" type="button" data-close-facts aria-label="Close facts">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>
         </button>
       </div>
-      <div class="card__preview">
-        <img id="infoImage" alt="" width="200" height="200" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 2'%3E%3Ccircle cx='1' cy='1' r='1' fill='%23d9cfbb'/%3E%3C/svg%3E" />
-        <div class="card__caption" id="infoCaption" hidden><span class="card__captionKicker">Seen from Earth</span><span id="infoPhase"></span></div>
+      <div class="facts__preview">
+        <img id="infoImage" alt="" width="220" height="220" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 2'%3E%3Ccircle cx='1' cy='1' r='1' fill='%23283060'/%3E%3C/svg%3E" />
+        <div class="facts__caption" id="infoCaption" hidden><span class="facts__captionKicker">Seen from Earth</span><span id="infoPhase"></span></div>
       </div>
       <dl class="stats" id="infoStats"></dl>
-      <p class="card__text" id="infoText"></p>
-      <p class="card__note" id="infoNote"></p>
-      <button class="btn btn--ink" type="button" data-close>Got it</button>
-    </div>
+      <p class="facts__text" id="infoText"></p>
+      <p class="facts__note" id="infoNote"></p>
+    </aside>
   </div>
 
   <!-- More menu -->
@@ -113,11 +118,11 @@
     <div class="sheet__card card card--menu">
       <div class="card__cover" aria-hidden="true">
         <svg viewBox="0 0 320 120" preserveAspectRatio="xMidYMid slice">
-          <rect width="320" height="120" fill="#101420"/>
-          <g fill="none" stroke="#E9DDC3" stroke-opacity=".35">
+          <rect width="320" height="120" fill="#0b1030"/>
+          <g fill="none" stroke="#8b7cff" stroke-opacity=".45">
             <ellipse cx="250" cy="60" rx="60" ry="22"/><ellipse cx="250" cy="60" rx="110" ry="40"/><ellipse cx="250" cy="60" rx="170" ry="62"/><ellipse cx="250" cy="60" rx="240" ry="88"/>
           </g>
-          <circle cx="250" cy="60" r="14" fill="#F2B544"/><circle cx="250" cy="60" r="22" fill="#F2B544" fill-opacity=".25"/>
+          <circle cx="250" cy="60" r="14" fill="#FFB13D"/><circle cx="250" cy="60" r="24" fill="#FFB13D" fill-opacity=".2"/>
           <circle cx="192" cy="71" r="2.6" fill="#B8BCC6"/><circle cx="150" cy="43" r="3.4" fill="#E8C48A"/><circle cx="92" cy="95" r="3.6" fill="#6FB1FF"/><circle cx="27" cy="38" r="3" fill="#FF8A75"/>
           <circle cx="60" cy="20" r="1" fill="#fff"/><circle cx="120" cy="12" r="1.2" fill="#fff"/><circle cx="300" cy="18" r="1" fill="#fff"/><circle cx="20" cy="100" r="1" fill="#fff"/>
         </svg>
@@ -152,13 +157,13 @@
     <div class="sheet__card card card--help">
       <div class="card__head">
         <h2 id="helpTitle">How to use this model</h2>
-        <button class="iconbtn iconbtn--paper" type="button" data-close aria-label="Close">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        <button class="tool tool--icon" type="button" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>
         </button>
       </div>
       <p class="card__text" id="helpIntro"></p>
       <ul class="helplist" id="helpList"></ul>
-      <button class="btn btn--ink" type="button" data-close>Got it</button>
+      <button class="btn btn--primary" type="button" data-close>Got it</button>
     </div>
   </div>
 
@@ -168,16 +173,17 @@
     <div class="sheet__card card card--rate">
       <div class="card__head">
         <h2 id="rateTitle">How was this model?</h2>
-        <button class="iconbtn iconbtn--paper" type="button" data-close aria-label="Close">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        <button class="tool tool--icon" type="button" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>
         </button>
       </div>
       <div class="stars" id="stars" role="radiogroup" aria-label="Your rating"></div>
       <p class="card__text" id="rateThanks" hidden>Thanks, your rating has been noted.</p>
-      <button class="btn btn--ink" id="btnSendRating" type="button" disabled>Send</button>
+      <button class="btn btn--primary" id="btnSendRating" type="button" disabled>Send</button>
     </div>
   </div>
 
+  <div class="facts__scrim" id="factsScrim" hidden></div>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
   <script type="module" src="/src/main.js"></script>
