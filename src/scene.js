@@ -76,6 +76,27 @@ const STAR_FRAG = `
 varying vec3 vC;
 void main(){ vec2 c = gl_PointCoord - 0.5; float d = length(c)*2.0; float a = smoothstep(1.0, 0.25, d); gl_FragColor = vec4(vC, a); }`;
 
+const RING_VERT = `
+varying vec2 vUv; varying vec3 vWP; varying vec3 vWN;
+void main(){ vUv = uv; vec4 wp = modelMatrix * vec4(position,1.0); vWP = wp.xyz; vWN = normalize(mat3(modelMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * wp; }`;
+const RING_FRAG = `
+uniform sampler2D map; uniform vec3 uSunDir; uniform vec3 uPlanetPos; uniform float uPlanetRadius;
+varying vec2 vUv; varying vec3 vWP; varying vec3 vWN;
+void main(){
+  vec4 c = texture2D(map, vUv); if (c.a < 0.02) discard;
+  vec3 L = normalize(uSunDir);
+  float ndl = dot(normalize(vWN), L);
+  float lit = 0.3 + 0.7 * abs(ndl);           // both faces receive light: the unlit face glows with transmitted light
+  if (ndl < 0.0) lit *= 0.8;
+  // The planet's shadow across the rings.
+  vec3 d = uPlanetPos - vWP; float t = dot(d, L);
+  float shadow = 1.0;
+  if (t > 0.0) { float perp = length(d - t * L); shadow = smoothstep(uPlanetRadius * 0.94, uPlanetRadius * 1.03, perp); shadow = 0.08 + 0.92 * shadow; }
+  gl_FragColor = vec4(c.rgb * lit * shadow, c.a);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}`;
+
 const BELT_VERT = `
 uniform float uPR; uniform float uSize; uniform float uHalfH;
 void main(){ vec4 mv = modelViewMatrix * vec4(position,1.0); float d = max(0.001, -mv.z);
@@ -136,6 +157,7 @@ export class SolarScene {
     this.sunLight = new THREE.PointLight(0xfff1d6, 3.4, 0, 0);
     this.scene.add(this.sunLight);
     this.scene.add(new THREE.HemisphereLight(0x5a6aa8, 0x1a1630, 0.75));
+    this.scene.add(new THREE.AmbientLight(0x4a5590, 0.25));
   }
 
   _buildSun() {
@@ -244,7 +266,10 @@ export class SolarScene {
           const rr = Math.hypot(x, y);
           uv.setXY(i, (rr - inner) / (outer - inner), 0.5);
         }
-        const rm = new THREE.MeshStandardMaterial({ map: proc.saturnRingTexture(), transparent: true, side: THREE.DoubleSide, roughness: 0.9, metalness: 0, depthWrite: false, alphaTest: 0.02 });
+        const rm = new THREE.ShaderMaterial({
+          uniforms: { map: { value: proc.saturnRingTexture() }, uSunDir: { value: new THREE.Vector3(0, 0, 1) }, uPlanetPos: { value: new THREE.Vector3() }, uPlanetRadius: { value: r } },
+          vertexShader: RING_VERT, fragmentShader: RING_FRAG, transparent: true, side: THREE.DoubleSide, depthWrite: false,
+        });
         rings = new THREE.Mesh(geo, rm);
         rings.rotation.x = -Math.PI / 2;
         orient.add(rings);
@@ -260,7 +285,8 @@ export class SolarScene {
       this.scene.add(orbit);
 
       // Marker sprite
-      const mm = new THREE.SpriteMaterial({ map: markerTex, color: new THREE.Color(p.marker), transparent: true, opacity: 0.9, depthWrite: false, depthTest: true });
+      const ringed = p.key === 'saturn';
+      const mm = new THREE.SpriteMaterial({ map: ringed ? proc.saturnMarkerTexture(96) : markerTex, color: ringed ? 0xffffff : new THREE.Color(p.marker), transparent: true, opacity: 0.9, depthWrite: false, depthTest: true });
       const marker = new THREE.Sprite(mm);
       this.scene.add(marker);
 
@@ -346,12 +372,30 @@ export class SolarScene {
     this.textures = textures;
   }
 
+  // Keep the scene centred in the part of the canvas not covered by floating panels.
+  setInsets({ top = 0, bottom = 0, right = 0, left = 0 } = {}) {
+    this.insets = { top, bottom, right, left };
+    this._applyViewOffset();
+  }
+  _applyViewOffset() {
+    const { width: w, height: h } = this;
+    if (!w || !h) return;
+    const i = this.insets || { top: 0, bottom: 0, right: 0, left: 0 };
+    const dx = i.right - i.left, dy = i.bottom - i.top;
+    this.camera.setViewOffset(w + Math.abs(dx), h + Math.abs(dy), Math.max(0, dx), Math.max(0, dy), w, h);
+    this.camera.updateProjectionMatrix();
+  }
+  visibleAspect() {
+    const i = this.insets || { top: 0, bottom: 0, right: 0, left: 0 };
+    return Math.max(1, this.width - i.left - i.right) / Math.max(1, this.height - i.top - i.bottom);
+  }
+
   resize(width, height, dpr) {
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(width, height, false);
     this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
     this.width = width; this.height = height;
+    this._applyViewOffset();
     this.stars.material.uniforms.uPR.value = dpr;
     for (const m of this.beltMaterials) { m.uniforms.uPR.value = dpr; m.uniforms.uHalfH.value = height / 2; }
   }
@@ -382,6 +426,7 @@ export class SolarScene {
       }
       if (e.clouds) e.clouds.rotation.y = (e.clouds.rotation.y + playingSimDays * 0.6 + dtReal * 0.004) % (Math.PI * 2);
       if (e.atmo) e.atmo.material.uniforms.uSunDir.value.copy(e.pos).negate().normalize();
+      if (e.rings) { const u = e.rings.material.uniforms; u.uSunDir.value.copy(e.pos).negate().normalize(); u.uPlanetPos.value.copy(e.pos); u.uPlanetRadius.value = e.radius * 0.97; }
       if (key === 'earth') {
         this.earthPos.copy(e.pos);
         e.mat.userData.sunDir.value.copy(e.pos).negate().normalize();
@@ -391,11 +436,12 @@ export class SolarScene {
       const halfH = dist * fovTan;
       const screenR = (e.radius / halfH) * (this.height / 2);
       e.screenRadius = screenR;
-      const fade = THREE.MathUtils.clamp((5 - screenR) / 3, 0, 1);
+      const ringed = key === 'saturn';
+      const fade = ringed ? THREE.MathUtils.clamp((14 - screenR) / 6, 0, 1) : THREE.MathUtils.clamp((5 - screenR) / 3, 0, 1);
       if (fade > 0) {
         e.marker.visible = true;
         e.marker.position.copy(e.pos);
-        e.marker.scale.setScalar((11 / this.height) * 2 * halfH);
+        e.marker.scale.setScalar(((ringed ? 30 : 11) / this.height) * 2 * halfH);
         e.marker.material.opacity = 0.9 * fade;
       } else e.marker.visible = false;
       // Orbit ring opacity
@@ -593,6 +639,12 @@ export class Thumbnailer {
       }
       if (e.rings) {
         const rings = e.rings.clone();
+        rings.material = e.rings.material.clone();
+        rings.material.uniforms = THREE.UniformsUtils.clone(e.rings.material.uniforms);
+        rings.material.uniforms.map.value = e.rings.material.uniforms.map.value;
+        rings.material.uniforms.uSunDir.value.set(-3, 2, 4).normalize();
+        rings.material.uniforms.uPlanetPos.value.set(0, 0, 0);
+        rings.material.uniforms.uPlanetRadius.value = 0.97;
         rings.rotation.set(-Math.PI / 2 + 0.62, 0, 0.18);
         mesh.add(rings);
       }

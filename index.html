@@ -11,7 +11,23 @@
 </head>
 <body>
   <div id="app" class="app" data-view="system">
-    <header class="top">
+    <main class="stage" id="stage">
+      <canvas id="sky" aria-label="3D view of the solar system. Drag to turn, scroll or pinch to zoom, tap a body to open it."></canvas>
+      <div class="stage__loading" id="loading" role="status">
+        <div class="loading__orbit" aria-hidden="true"><span></span></div>
+        <p>Drawing the sky…</p>
+      </div>
+      <button class="backtab" id="btnBack" type="button" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Whole system</span>
+      </button>
+      <div class="stamp" id="eclipseBadge" hidden role="status"></div>
+      <div class="label" id="hoverLabel" hidden></div>
+      <div class="label label--pinned" id="pinLabelEarth" hidden>Earth</div>
+      <div class="label label--pinned" id="pinLabelMoon" hidden>Moon</div>
+    </main>
+
+    <header class="top" id="top">
       <div class="brand">
         <h1>Our Solar System</h1>
         <p class="brand__sub">Planets, Moon phases and eclipses on the real calendar</p>
@@ -38,32 +54,33 @@
       </div>
     </header>
 
-    <nav class="dock" aria-label="Bodies">
-      <div class="dock__list" id="bodies" role="listbox" aria-label="Sun, planets and the Moon"></div>
-      <button class="tool tool--icon dock__info" id="btnInfo" type="button" aria-label="Facts about the selected body" title="Facts">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10.5v6M12 7.3v.2" stroke-linecap="round"/></svg>
-      </button>
-    </nav>
-
-    <main class="stage" id="stage">
-      <canvas id="sky" aria-label="3D view of the solar system. Drag to turn, scroll or pinch to zoom, tap a body to open it."></canvas>
-      <div class="stage__loading" id="loading" role="status">
-        <div class="loading__orbit" aria-hidden="true"><span></span></div>
-        <p>Drawing the sky…</p>
+    <aside class="facts" id="facts" aria-labelledby="infoTitle">
+      <div class="facts__head">
+        <div>
+          <p class="facts__kicker" id="infoKind">Planet</p>
+          <h2 id="infoTitle">Earth</h2>
+        </div>
+        <button class="tool tool--icon facts__close" type="button" data-close-facts aria-label="Hide facts">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>
+        </button>
       </div>
-      <button class="backtab" id="btnBack" type="button" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span>Whole system</span>
-      </button>
-      <div class="stamp" id="eclipseBadge" hidden role="status"></div>
-      <div class="label" id="hoverLabel" hidden></div>
-      <div class="label label--pinned" id="pinLabelEarth" hidden>Earth</div>
-      <div class="label label--pinned" id="pinLabelMoon" hidden>Moon</div>
-      <div class="label label--here" id="pinLabelHere" hidden>You are about here</div>
-    </main>
+      <div class="facts__body">
+        <div class="facts__preview">
+          <img id="infoImage" alt="" width="220" height="220" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 2'%3E%3Ccircle cx='1' cy='1' r='1' fill='%23283060'/%3E%3C/svg%3E" />
+          <div class="facts__caption" id="infoCaption" hidden><span class="facts__captionKicker">Seen from Earth</span><span id="infoPhase"></span></div>
+        </div>
+        <dl class="stats" id="infoStats"></dl>
+        <p class="facts__text" id="infoText"></p>
+        <p class="facts__note" id="infoNote"></p>
+      </div>
+    </aside>
+    <button class="tool factsbtn" id="btnFacts" type="button" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10.5v6M12 7.3v.2" stroke-linecap="round"/></svg>
+      <span id="btnFactsText">Facts</span>
+    </button>
 
-    <section class="timebar" aria-label="Time">
-      <div class="timebar__row">
+    <section class="deck" id="deck" aria-label="Time and bodies">
+      <div class="console">
         <button class="play" id="btnPlay" type="button" aria-label="Play" aria-pressed="false">
           <svg class="play__icon play__icon--play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg>
           <svg class="play__icon play__icon--pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 5.5h3.4v13H7.5zM13.1 5.5h3.4v13h-3.4z"/></svg>
@@ -79,38 +96,37 @@
           </div>
           <button class="datebox__today" id="btnToday" type="button" aria-pressed="true">Now</button>
         </div>
-      </div>
-      <div class="timebar__row timebar__row--tools">
-        <div class="tabs" role="group" aria-label="Time step">
-          <button class="tab" type="button" data-gran="day">Day</button>
-          <button class="tab" type="button" data-gran="month">Month</button>
-          <button class="tab" type="button" data-gran="year">Year</button>
+        <div class="console__tools">
+          <div class="tabs" role="group" aria-label="Time step">
+            <button class="tab" type="button" data-gran="day">Day</button>
+            <button class="tab" type="button" data-gran="month">Month</button>
+            <button class="tab" type="button" data-gran="year">Year</button>
+          </div>
+          <button class="capsule" id="btnEclipse" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><path d="M9.5 5.4a7.5 7.5 0 0 0 0 13.2A8.5 8.5 0 0 1 9.5 5.4z" class="fill"/></svg>
+            <span>Find next eclipse</span>
+          </button>
         </div>
-        <button class="capsule" id="btnEclipse" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><path d="M9.5 5.4a7.5 7.5 0 0 0 0 13.2A8.5 8.5 0 0 1 9.5 5.4z" class="fill"/></svg>
-          <span>Find next eclipse</span>
-        </button>
       </div>
+      <nav class="dock" aria-label="Bodies">
+        <div class="dock__list" id="bodies" role="listbox" aria-label="Sun, planets and the Moon"></div>
+        <button class="tool tool--icon dock__info" id="btnInfo" type="button" aria-label="Facts about the selected body" title="Facts">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10.5v6M12 7.3v.2" stroke-linecap="round"/></svg>
+        </button>
+      </nav>
     </section>
+  </div>
 
-    <aside class="facts" id="facts" aria-labelledby="infoTitle">
-      <div class="facts__head">
-        <div>
-          <p class="facts__kicker" id="infoKind">Planet</p>
-          <h2 id="infoTitle">Earth</h2>
-        </div>
-        <button class="tool tool--icon facts__close" type="button" data-close-facts aria-label="Close facts">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-      <div class="facts__preview">
-        <img id="infoImage" alt="" width="220" height="220" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 2'%3E%3Ccircle cx='1' cy='1' r='1' fill='%23283060'/%3E%3C/svg%3E" />
-        <div class="facts__caption" id="infoCaption" hidden><span class="facts__captionKicker">Seen from Earth</span><span id="infoPhase"></span></div>
-      </div>
-      <dl class="stats" id="infoStats"></dl>
-      <p class="facts__text" id="infoText"></p>
-      <p class="facts__note" id="infoNote"></p>
-    </aside>
+  <!-- Welcome -->
+  <div class="sheet sheet--center" id="introSheet" role="dialog" aria-modal="true" aria-labelledby="introTitle" hidden>
+    <div class="sheet__scrim"></div>
+    <div class="sheet__card card card--intro">
+      <p class="facts__kicker">Welcome</p>
+      <h2 id="introTitle">Our Solar System</h2>
+      <p class="card__text">A 3D model of the Sun, the planets and the Moon, set to the real calendar. Right now it shows the sky exactly as it is at this moment.</p>
+      <ul class="helplist" id="introList"></ul>
+      <button class="btn btn--primary" type="button" id="btnIntroStart">Start exploring</button>
+    </div>
   </div>
 
   <!-- More menu -->

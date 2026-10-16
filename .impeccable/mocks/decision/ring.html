@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0}html,body{width:1440px;height:900px;overflow:hidden;background:#070a1a;color:#eef0ff;font-family:system-ui,sans-serif}
+.sky{position:absolute;inset:0;background:radial-gradient(ellipse at 42% 52%,#121a46 0,#070a1a 60%)}
+.sun{position:absolute;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#fff2c0,#ffb13d 55%,#ff7a2e);box-shadow:0 0 90px 30px rgba(255,177,61,.35)}
+.orbit{position:absolute;border:1px solid rgba(191,200,255,.28);border-radius:50%}
+.dot{position:absolute;width:7px;height:7px;border-radius:50%;background:#8fd1ff;box-shadow:0 0 8px #8fd1ff}
+.glass{background:rgba(16,21,52,.72);backdrop-filter:blur(14px);border:1px solid rgba(150,160,255,.22);border-radius:22px}
+.pill{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:rgba(139,124,255,.14);border:1px solid rgba(150,160,255,.3);color:#eef0ff;font-weight:700;font-size:15px;padding:0 18px;height:40px}
+.pill.on{background:#8b7cff;border-color:#8b7cff;color:#fff}
+.play{width:52px;height:52px;border-radius:50%;background:linear-gradient(180deg,#9d90ff,#6a5bf0);box-shadow:0 6px 18px rgba(107,91,240,.5)}
+.tape{flex:1;height:44px;border-radius:14px;background:repeating-linear-gradient(90deg,rgba(238,240,255,.55) 0 1px,transparent 1px 12px);position:relative}
+.tape:after{content:'';position:absolute;left:50%;top:-4px;bottom:-4px;width:3px;background:#ff6bc9;box-shadow:0 0 10px #ff6bc9;border-radius:2px}
+.date{font-weight:800;font-size:18px;letter-spacing:-.01em}.sub{font-size:12px;color:#a7afdc}
+.body{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#a7afdc}
+.body i{display:block;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff5,#0000 40%),var(--c,#888)}
+.body.sel{color:#eef0ff}.body.sel i{box-shadow:0 0 0 3px #5fe1ff,0 0 20px rgba(95,225,255,.5)}
+h1{font-size:22px;font-weight:800;letter-spacing:-.02em}h2{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.kick{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#5fe1ff;font-weight:700}
+.stat{display:grid;gap:4px}.stat b{font-size:19px}.stat span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#a7afdc}
+p{font-size:15px;line-height:1.5}.ic{width:40px;height:40px;border-radius:50%;border:1px solid rgba(150,160,255,.35);display:inline-block}
+.prev{width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#8fd1ff,#1c4fa8 55%,#061a3a);box-shadow:0 0 40px rgba(139,124,255,.3)}
+</style></head><body><div class="sky"><div class="sun" style="left:300px;top:330px"></div>
+<div class="orbit" style="left:330px;top:310px;width:600px;height:260px"></div><div class="orbit" style="left:calc(330px - 120px);top:calc(310px - 50px);width:840px;height:360px"></div><div class="orbit" style="left:calc(330px - 300px);top:calc(310px - 120px);width:1200px;height:500px"></div>
+<div class="dot" style="left:calc(330px + 560px);top:calc(310px + 120px)"></div><div class="dot" style="left:calc(330px + 300px);top:calc(310px - 40px);background:#ff8a75;box-shadow:0 0 8px #ff8a75"></div><div class="dot" style="left:calc(330px + 700px);top:calc(310px + 300px);background:#f5b041;box-shadow:0 0 8px #f5b041"></div></div><div style="position:absolute;left:0;right:0;top:0;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 28px"><h1>Our Solar System</h1><div style="display:flex;gap:10px"><span class="pill">Orbit paths</span><span class="ic"></span><span class="ic"></span><span class="ic"></span></div></div>
+<div class="glass" style="position:absolute;left:50%;transform:translateX(-50%);bottom:112px;width:980px;height:72px;display:flex;align-items:center;gap:16px;padding:0 14px"><div class="play"></div><div class="tape"></div><div><div class="date">16 Oct 2026</div><div class="sub">12:40 IST · Live</div></div><span class="pill on">Month</span><span class="pill">Day</span><span class="pill">Year</span><span class="pill">◐ Find next eclipse</span></div>
+<div style="position:absolute;left:50%;transform:translateX(-50%);bottom:18px;display:flex;gap:26px;align-items:flex-end"><div class="body" style="--c:#ffb13d"><i></i>Sun</div><div class="body" style="--c:#b8bcc6"><i></i>Mercury</div><div class="body" style="--c:#e8c48a"><i></i>Venus</div><div class="body sel" style="--c:#4d7fe0"><i></i>Earth</div><div class="body" style="--c:#d26a4a"><i></i>Mars</div><div class="body" style="--c:#d9b58a"><i></i>Jupiter</div><div class="body" style="--c:#e5cf96"><i></i>Saturn</div><div class="body" style="--c:#8fe3ff"><i></i>Uranus</div><div class="body" style="--c:#5b94ff"><i></i>Neptune</div><div class="body" style="--c:#c9cdd8"><i></i>Moon</div></div>
+<div class="glass" style="position:absolute;right:28px;top:88px;width:330px;padding:24px"><div class="kick">Planet</div><h2>Earth</h2><div class="prev" style="margin:16px auto"></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;margin:8px 0 14px"><div class="stat"><span>One year</span><b>365 days</b></div><div class="stat"><span>Distance</span><b>1 AU</b></div><div class="stat"><span>Size</span><b>6,371 km</b></div><div class="stat"><span>Moons</span><b>1</b></div></div>
+<p>Our home. Liquid-water oceans, swirling clouds and an atmosphere of nitrogen and oxygen make it the only world we know of that carries life.</p></div></body></html>

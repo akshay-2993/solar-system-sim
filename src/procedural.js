@@ -304,3 +304,24 @@ export function oceanRoughnessMap(image) {
   tex.colorSpace = THREE.NoColorSpace;
   return tex;
 }
+
+// Distant Saturn: a small disc with a tilted ring, so it is recognisable from the overview.
+export function saturnMarkerTexture(size = 96) {
+  const canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const c = size / 2;
+  ctx.translate(c, c); ctx.rotate(-0.45);
+  ctx.lineWidth = size * 0.055;
+  ctx.strokeStyle = 'rgba(232, 214, 170, 0.95)';
+  ctx.beginPath(); ctx.ellipse(0, 0, size * 0.42, size * 0.13, 0, 0, Math.PI * 2); ctx.stroke();
+  const g = ctx.createRadialGradient(-size * 0.05, -size * 0.05, 0, 0, 0, size * 0.2);
+  g.addColorStop(0, '#fff3d0'); g.addColorStop(0.7, '#e2c88e'); g.addColorStop(1, '#a98a52');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, size * 0.19, 0, Math.PI * 2); ctx.fill();
+  // front half of the ring over the disc
+  ctx.beginPath(); ctx.ellipse(0, 0, size * 0.42, size * 0.13, 0, 0, Math.PI); ctx.stroke();
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}

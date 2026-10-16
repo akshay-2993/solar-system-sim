@@ -48,7 +48,8 @@ The site appears at `https://<you>.github.io/solar-system-sim/` after the first 
 - **Orbit paths** hides or shows the orbit rings.
 - **Body dock**: tap the Sun or a planet for a close-up. Earth opens above your own region (from the device time zone) with a "You are about here" pin, so day and night at home are visible; Moon opens the Earth–Moon view side-on, where the Moon can be dragged around Earth to change the date.
 - Leave the view alone for a few seconds and it drifts slowly around the selected body.
-- The **facts panel** shows the selected body's numbers and a short description (on phones, open it with ⓘ). **⋮** holds Mute, Help, Reset and Share.
+- The **facts card** (top-right) shows the selected body's numbers and a short description; close it with ✕ and bring it back with the Facts pill (on phones, open it with ⓘ). **⋮** holds Mute, Help, Reset and Share.
+- A short welcome pop-up explains the model when the page loads.
 - In the 3D view: drag to turn, scroll or pinch to zoom, tap a planet to select it.
 
 ## Project layout

@@ -30,3 +30,7 @@ Signature move: the timeline is a ruled logbook strip with a red pin; Day/Month/
 Honest risk: cream panels over a black canvas can read as a light theme bolted on; the cover rail, rules and ink type must make the paper read as an object.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+
+
+## Revision (attended round, surface scope, seed 4ae86b80)
+Akshay pinned blues/violets, rounded shapes and fewer boxed sections. Five compositions were offered (three dealt: open sky with a bottom row, bodies strip under the title, slim icon rail; two additional: single bottom console, single reading column). Akshay chose **open sky, bottom row**: full-bleed sky, floating pill console, body icons in a row, one hideable facts card top-right. Built code-led.

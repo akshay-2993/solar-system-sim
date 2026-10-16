@@ -132,13 +132,19 @@ export const APP_SUBTITLE = 'Planets, Moon phases and eclipses on the real calen
 export const APP_DESCRIPTION =
   'A 3D model of the solar system that follows the real calendar. Choose any date between 1900 and 2100, fly to a planet, and step inside the Earth–Moon system to see phases and eclipses.';
 
+export const INTRO = [
+  'Press play or drag the time strip to travel through the years and watch the planets move.',
+  'Tap the Sun, a planet or the Moon to fly closer and read its facts.',
+  'Open Earth or the Moon to see day and night, the Moon\u2019s phases, and real eclipses.',
+];
+
 export const HELP = {
   intro:
     'This is a 3D model of the solar system tied to the real calendar. Pick any date and each planet appears where it truly is. Open Earth or the Moon to see the Moon’s phases and eclipses up close.',
   learn: [
     'Where each planet really is on any date, and why the inner planets lap the Sun much faster than the outer ones.',
     'How big the planets are compared with the Sun, and how empty the space between them is.',
-    'Why we have day and night: Earth turns once a day, and the half facing the Sun is lit. The pin shows your own region.',
+    'Why we have day and night: Earth turns once a day, and only the half facing the Sun is lit. The Earth view opens above your own part of the world.',
     'Why the Moon shows phases: the sunlit half of the Moon is always there, we just see different amounts of it as it circles Earth.',
     'Why eclipses are rare: the Moon\u2019s path is tilted, so it only lines up exactly with the Sun and Earth a few times a year.',
   ],

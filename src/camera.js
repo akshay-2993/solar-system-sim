@@ -11,7 +11,7 @@ export function systemPreset(aspect) {
   const a = { position: SYSTEM_BASE.clone().multiplyScalar(tall), target: new THREE.Vector3(0, 0, 0) };
   if (aspect <= 0.9) return a;
   const n = Math.max(0, 1.8 - aspect);
-  const shift = new THREE.Vector3(0.6 * (3.61 + (aspect < 1.8 ? 3.267 * n : 0)), 0, 0);
+  const shift = new THREE.Vector3(0.42 * (3.61 + (aspect < 1.8 ? 3.267 * n : 0)), 0, 0);
   const b = { position: WIDE_BASE.clone().multiplyScalar(aspect >= 1.8 ? 2.07 / aspect : 1.15 + 1.567 * n).add(shift), target: shift };
   if (aspect >= 1.2) return b;
   const s = smootherstep((aspect - 0.9) / 0.3);

@@ -76,7 +76,7 @@ const ui = new UI(state, {
     state.granularity = 'month'; ui.paintGranularity('month');
     state.orbitPaths = true; scene.setOrbitPaths(true); ui.paintOrbits(true);
     state.selected = 'earth'; scene.setSelected('earth'); ui.paintSelection('earth');
-    if (state.view !== 'system') backToSystem(); else { rig.userMoved = false; rig.flyToSystem(scene.camera.aspect); }
+    if (state.view !== 'system') backToSystem(); else { rig.userMoved = false; rig.flyToSystem(scene.visibleAspect()); }
   },
   async share() {
     const url = location.href.split('#')[0];
@@ -91,6 +91,7 @@ const ui = new UI(state, {
     window.close();
     setTimeout(() => { if (history.length > 1) history.back(); else ui.toast('Nothing to close here'); }, 80);
   },
+  onLayoutChange() { resize(); },
   renderPreview(key, opts) { return thumbs ? thumbs.render(key, 360, opts) : ''; },
   scrubEnd() {},
 });
@@ -141,7 +142,7 @@ function backToSystem() {
   state.view = 'system';
   scene.setViewMode('system');
   ui.paintView('system');
-  rig.flyToSystem(scene.camera.aspect);
+  rig.flyToSystem(scene.visibleAspect());
   sound.whoosh();
 }
 
@@ -153,12 +154,18 @@ function resize() {
   const dprCap = area > 2.6e6 ? 1.25 : area > 1.6e6 ? 1.5 : 2;
   const dpr = Math.min(dprCap, window.devicePixelRatio || 1);
   scene.resize(w, h, dpr);
-  rig.reframeSystem(w / h);
+  // Floating panels cover parts of the sky; keep the scene centred in what is left.
+  const deckH = ui.el.deck.getBoundingClientRect().height;
+  const topH = ui.el.top.getBoundingClientRect().height;
+  const factsW = ui.factsCardVisible() ? ui.el.facts.getBoundingClientRect().width + 16 : 0;
+  scene.setInsets({ top: topH * 0.6, bottom: deckH, right: factsW });
+  rig.reframeSystem(scene.visibleAspect());
   ui.resizeTape();
 }
 const ro = new ResizeObserver(() => resize());
 ro.observe(stage);
 ro.observe(document.getElementById('tape'));
+ro.observe(document.getElementById('deck'));
 window.addEventListener('orientationchange', () => setTimeout(resize, 120));
 
 // ---- Pointer interaction on the sky ----
@@ -264,13 +271,6 @@ function frame(now) {
     ui.placeLabel(ui.el.pinEarth, hover === 'earth' ? null : scene.project(scene.earthPos.clone().add(new THREE.Vector3(0, er * 1.5, 0))));
     ui.placeLabel(ui.el.pinMoon, hover === 'moon' ? null : scene.project(scene.moonPos.clone().add(new THREE.Vector3(0, mr * 2.2, 0))));
   } else { ui.el.pinEarth.hidden = true; ui.el.pinMoon.hidden = true; }
-  // "You are here" pin on Earth
-  if (earthMoon) {
-    const dir = scene.earthSurfaceDirection(observer.lat, observer.lon);
-    const camDir = scene.camera.position.clone().sub(scene.earthPos).normalize();
-    const facing = dir.dot(camDir) > 0.15;
-    ui.placeLabel(ui.el.pinHere, facing ? scene.project(scene.earthPos.clone().addScaledVector(dir, scene.bodyRadius('earth') * 1.02)) : null);
-  } else ui.el.pinHere.hidden = true;
 }
 
 // ---- Boot ----
@@ -282,11 +282,12 @@ ui.paintView('system');
 scene.setSelected(state.selected);
 resize();
 rig.userMoved = false;
-rig.reframeSystem(scene.camera.aspect);
+rig.reframeSystem(scene.visibleAspect());
 requestAnimationFrame(frame);
 
 scene.load().then(() => {
   ui.setLoading(true);
+  ui.showIntro();
   thumbs = new Thumbnailer(scene);
   const map = {};
   for (const key of BODIES) map[key] = thumbs.render(key, 112, key === 'moon' ? { lightAngle: Math.PI - 0.7 } : {});

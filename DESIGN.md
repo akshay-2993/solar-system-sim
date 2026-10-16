@@ -5,13 +5,14 @@
 A deep-space console in blues and violets (the palette Akshay pinned): the sky is the page,
 and three quiet instrument panels sit around it. Written from the built page.
 
-## Layout
+## Layout: open sky, three floating pieces
 
-Desktop (> 900 px): a three-column grid. Left, a vertical dock listing the Sun, the eight
-planets and the Moon with rendered thumbnails. Centre, the 3D sky with a time bar beneath it.
-Right, an always-visible facts panel for the selected body, so students read while they look.
-Narrow screens: top bar, sky, time bar, then the dock as a horizontal row; the facts panel
-slides up as a sheet from the ⓘ button at the end of the row.
+The sky fills the whole page. Three glass pieces float on it, nothing is boxed in:
+a transparent top bar (title left, tools right), a pill-shaped time console above a row of
+body icons along the bottom, and a facts card top-right that can be hidden (a "Facts" pill
+brings it back). The camera keeps the scene centred in the part of the sky the pieces leave
+uncovered. Narrow screens: the console wraps to two rows, the body row scrolls, and the facts
+card slides up as a sheet from the ⓘ button. A welcome pop-up explains the model on load.
 
 ## Colour
 
@@ -34,7 +35,7 @@ slides up as a sheet from the ⓘ button at the end of the row.
 
 ## Shape and surfaces
 
-- Capsules (999 px) for every button and tab; 7 px radius for the tape, date box and stat tiles; 10–16 px for sheets.
+- Everything is rounded: capsules (999 px) for buttons, tabs, the tape, the date box and the console; 22 px for the facts card and sheets; 16 px for body tiles.
 - Hairline outlines on dark fills; the selected dock item gets a cyan ring plus a soft glow.
 - Shadows always offset and blurred; the play button carries a violet glow.
 

@@ -1,5 +1,5 @@
 // DOM wiring: dock of bodies, time bar, facts panel, sheets and overlays.
-import { BODIES, BODY_NAMES, BODY_COLORS, INFO, FOOTNOTE, PHASE_NAMES, HELP, APP_DESCRIPTION } from './data.js';
+import { BODIES, BODY_NAMES, BODY_COLORS, INFO, FOOTNOTE, PHASE_NAMES, HELP, INTRO, APP_DESCRIPTION } from './data.js';
 import * as astro from './astro.js';
 import * as sound from './sound.js';
 
@@ -28,12 +28,13 @@ export class UI {
     this.actions = actions;
     this.el = {
       app: $('app'), stage: $('stage'), sky: $('sky'), loading: $('loading'),
-      btnBack: $('btnBack'), badge: $('eclipseBadge'), hoverLabel: $('hoverLabel'), pinEarth: $('pinLabelEarth'), pinMoon: $('pinLabelMoon'), pinHere: $('pinLabelHere'),
+      btnBack: $('btnBack'), badge: $('eclipseBadge'), hoverLabel: $('hoverLabel'), pinEarth: $('pinLabelEarth'), pinMoon: $('pinLabelMoon'),
       btnPlay: $('btnPlay'), tape: $('tape'), tapeCanvas: $('tapeCanvas'), dateOut: $('dateOut'), timeOut: $('timeOut'), btnToday: $('btnToday'),
       tabs: Array.from(document.querySelectorAll('.tab')), btnEclipse: $('btnEclipse'), chkOrbits: $('chkOrbits'),
       bodies: $('bodies'), btnInfo: $('btnInfo'),
-      facts: $('facts'), factsScrim: $('factsScrim'), infoKind: $('infoKind'), infoTitle: $('infoTitle'), infoImage: $('infoImage'), infoCaption: $('infoCaption'), infoPhase: $('infoPhase'), infoStats: $('infoStats'), infoText: $('infoText'), infoNote: $('infoNote'),
+      facts: $('facts'), factsScrim: $('factsScrim'), btnFacts: $('btnFacts'), btnFactsText: $('btnFactsText'), top: $('top'), deck: $('deck'), infoKind: $('infoKind'), infoTitle: $('infoTitle'), infoImage: $('infoImage'), infoCaption: $('infoCaption'), infoPhase: $('infoPhase'), infoStats: $('infoStats'), infoText: $('infoText'), infoNote: $('infoNote'),
       menuSheet: $('menuSheet'), menuDescription: $('menuDescription'), miMute: $('miMute'), miMuteText: $('miMuteText'), miHelp: $('miHelp'), miReset: $('miReset'), miShare: $('miShare'),
+      introSheet: $('introSheet'), introList: $('introList'), btnIntroStart: $('btnIntroStart'),
       helpSheet: $('helpSheet'), helpIntro: $('helpIntro'), helpList: $('helpList'), helpLearn: $('helpLearn'),
       rateSheet: $('rateSheet'), stars: $('stars'), btnSendRating: $('btnSendRating'), rateThanks: $('rateThanks'),
       btnHelp: $('btnHelp'), btnRate: $('btnRate'), btnMenu: $('btnMenu'), btnClose: $('btnClose'), toast: $('toast'),
@@ -76,6 +77,7 @@ export class UI {
     this.el.menuDescription.textContent = APP_DESCRIPTION;
     this.el.helpIntro.textContent = HELP.intro;
     for (const p of HELP.points) { const li = document.createElement('li'); li.textContent = p; this.el.helpList.append(li); }
+    for (const p of INTRO) { const li = document.createElement('li'); li.textContent = p; this.el.introList.append(li); }
     for (const p of HELP.learn) { const li = document.createElement('li'); li.textContent = p; this.el.helpLearn.append(li); }
     this.el.infoNote.textContent = FOOTNOTE;
     for (let i = 1; i <= 5; i += 1) {
@@ -101,6 +103,7 @@ export class UI {
     el.chkOrbits.addEventListener('change', () => { sound.click(); actions.setOrbitPaths(el.chkOrbits.checked); });
     el.btnBack.addEventListener('click', () => { sound.click(); actions.backToSystem(); });
     el.btnInfo.addEventListener('click', () => { sound.click(); this.openFacts(); });
+    el.btnIntroStart.addEventListener('click', () => { sound.click(); this.closeSheets(); });
     el.btnHelp.addEventListener('click', () => { sound.click(); this.openSheet(el.helpSheet); });
     el.btnMenu.addEventListener('click', () => { sound.click(); this.openSheet(el.menuSheet); });
     el.btnRate.addEventListener('click', () => { sound.click(); this.openSheet(el.rateSheet); });
@@ -113,8 +116,9 @@ export class UI {
     document.querySelectorAll('[data-close]').forEach((n) => n.addEventListener('click', () => { sound.click(); this.closeSheets(); }));
     document.querySelectorAll('[data-close-facts]').forEach((n) => n.addEventListener('click', () => { sound.click(); this.closeFacts(); }));
     el.factsScrim.addEventListener('click', () => this.closeFacts());
+    el.btnFacts.addEventListener('click', () => { sound.click(); this.showFactsCard(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { this.closeSheets(); this.closeFacts(); } });
-    this.narrow.addEventListener('change', () => this.closeFacts());
+    this.narrow.addEventListener('change', () => { this.el.facts.classList.remove('open'); this.el.factsScrim.hidden = true; this.actions.onLayoutChange?.(); });
 
     // Scrub tape: drag moves time (drag right = earlier). A click without a drag does nothing.
     const tape = el.tape;
@@ -159,22 +163,26 @@ export class UI {
   }
   closeSheets() {
     let any = false;
-    for (const s of [this.el.menuSheet, this.el.helpSheet, this.el.rateSheet]) { if (!s.hidden) any = true; s.hidden = true; }
+    for (const s of [this.el.introSheet, this.el.menuSheet, this.el.helpSheet, this.el.rateSheet]) { if (!s.hidden) any = true; s.hidden = true; }
     if (any) this._lastFocus?.focus?.({ preventScroll: true });
   }
-  // The facts panel is always visible on wide screens; on narrow screens it slides up as a sheet.
+  // Wide screens: the facts card floats top-right and can be hidden; narrow screens: it slides up as a sheet.
   openFacts() {
-    if (!this.narrow.matches) return;
+    if (!this.narrow.matches) { this.showFactsCard(); return; }
     this.el.facts.classList.add('open');
     this.el.factsScrim.hidden = false;
     this.el.facts.querySelector('.facts__close')?.focus({ preventScroll: true });
   }
   closeFacts() {
+    if (!this.narrow.matches) { this.hideFactsCard(); return; }
     if (!this.el.facts.classList.contains('open')) return;
     this.el.facts.classList.remove('open');
     this.el.factsScrim.hidden = true;
     this.el.btnInfo.focus({ preventScroll: true });
   }
+  hideFactsCard() { this.el.facts.classList.add('hidden-card'); this.el.btnFacts.hidden = false; this.actions.onLayoutChange?.(); }
+  showFactsCard() { this.el.facts.classList.remove('hidden-card'); this.el.btnFacts.hidden = true; this.actions.onLayoutChange?.(); }
+  factsCardVisible() { return !this.narrow.matches && !this.el.facts.classList.contains('hidden-card'); }
 
   // Fill the facts panel for the selected body.
   showFacts(key) {
@@ -182,6 +190,7 @@ export class UI {
     this.factsKey = key;
     this.el.infoKind.textContent = KIND[key] ?? 'Planet';
     this.el.infoTitle.textContent = BODY_NAMES[key];
+    this.el.btnFactsText.textContent = `${BODY_NAMES[key]} facts`;
     this.el.infoText.textContent = info.text;
     this.el.infoStats.replaceChildren(...info.stats.map(([k, v]) => {
       const d = document.createElement('div');
@@ -272,6 +281,7 @@ export class UI {
   }
   paintOrbits(on) { this.el.chkOrbits.checked = on; }
   setLoading(done) { this.el.loading.classList.toggle('out', done); }
+  showIntro() { this.openSheet(this.el.introSheet); }
   toast(msg) {
     const t = this.el.toast;
     t.textContent = msg; t.hidden = false;
