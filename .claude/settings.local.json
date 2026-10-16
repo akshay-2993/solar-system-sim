@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /private/tmp/claude-501/-Users-akshay-Downloads-Simulation/290d673f-8fc0-4dfa-9949-465ed9095aca/scratchpad/astra)",
+      "Bash(curl -sL -o main.js \"https://app.astra-ai.co/_next/static/immutable/chunks/1qe_no4ep_do3.js\")",
+      "Bash(curl -sL -o eclipse.js \"https://app.astra-ai.co/_next/static/immutable/chunks/0d-vfrnhbg6c7.js\")",
+      "Bash(curl -sL -o i18n.js \"https://app.astra-ai.co/api/i18n/en-IN?v=ba346a07db97&as=script\")",
+      "Bash(grep -o '.\\\\{0,300\\\\}semiMajor.\\\\{0,600\\\\}' main.js)",
+      "Bash(grep -o '.\\\\{0,200\\\\}orbitRadius.\\\\{0,300\\\\}' main.js)",
+      "Bash(python3 -I -)",
+      "Bash(cd /private/tmp/claude-501/-Users-akshay-Downloads-Simulation/290d673f-8fc0-4dfa-9949-465ed9095aca/scratchpad/astra *)",
+      "Bash(mkdir -p /Users/akshay/Downloads/Simulation/reference/screenshots)",
+      "Bash(cp mcp-Claude_Browser-blob-1792120295225-nyi4je.jpg /Users/akshay/Downloads/Simulation/reference/screenshots/01-system-view.jpg)",
+      "Bash(cp mcp-Claude_Browser-blob-1792120489334-naxd0x.jpg /Users/akshay/Downloads/Simulation/reference/screenshots/02-mercury-info-card.jpg)",
+      "Bash(cp mcp-Claude_Browser-blob-1792120474016-p24tz3.jpg /Users/akshay/Downloads/Simulation/reference/screenshots/03-moon-info-card.jpg)",
+      "Bash(cp mcp-Claude_Browser-blob-1792120581041-g21c32.jpg /Users/akshay/Downloads/Simulation/reference/screenshots/04-solar-eclipse.jpg)"
+    ]
+  }
+}

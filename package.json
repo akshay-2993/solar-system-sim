@@ -1,0 +1,23 @@
+{
+  "name": "solar-system-sim",
+  "version": "1.0.0",
+  "description": "Offline 3D solar system simulation for school students",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:single": "SINGLE=1 vite build --outDir dist-single",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.21",
+    "vite-plugin-singlefile": "^2.3.3"
+  },
+  "type": "module",
+  "private": true
+}
