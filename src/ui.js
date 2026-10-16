@@ -28,13 +28,13 @@ export class UI {
     this.actions = actions;
     this.el = {
       app: $('app'), stage: $('stage'), sky: $('sky'), loading: $('loading'),
-      btnBack: $('btnBack'), badge: $('eclipseBadge'), hoverLabel: $('hoverLabel'), pinEarth: $('pinLabelEarth'), pinMoon: $('pinLabelMoon'),
+      btnBack: $('btnBack'), badge: $('eclipseBadge'), hoverLabel: $('hoverLabel'), pinEarth: $('pinLabelEarth'), pinMoon: $('pinLabelMoon'), pinHere: $('pinLabelHere'),
       btnPlay: $('btnPlay'), tape: $('tape'), tapeCanvas: $('tapeCanvas'), dateOut: $('dateOut'), timeOut: $('timeOut'), btnToday: $('btnToday'),
       tabs: Array.from(document.querySelectorAll('.tab')), btnEclipse: $('btnEclipse'), chkOrbits: $('chkOrbits'),
       bodies: $('bodies'), btnInfo: $('btnInfo'),
       facts: $('facts'), factsScrim: $('factsScrim'), infoKind: $('infoKind'), infoTitle: $('infoTitle'), infoImage: $('infoImage'), infoCaption: $('infoCaption'), infoPhase: $('infoPhase'), infoStats: $('infoStats'), infoText: $('infoText'), infoNote: $('infoNote'),
       menuSheet: $('menuSheet'), menuDescription: $('menuDescription'), miMute: $('miMute'), miMuteText: $('miMuteText'), miHelp: $('miHelp'), miReset: $('miReset'), miShare: $('miShare'),
-      helpSheet: $('helpSheet'), helpIntro: $('helpIntro'), helpList: $('helpList'),
+      helpSheet: $('helpSheet'), helpIntro: $('helpIntro'), helpList: $('helpList'), helpLearn: $('helpLearn'),
       rateSheet: $('rateSheet'), stars: $('stars'), btnSendRating: $('btnSendRating'), rateThanks: $('rateThanks'),
       btnHelp: $('btnHelp'), btnRate: $('btnRate'), btnMenu: $('btnMenu'), btnClose: $('btnClose'), toast: $('toast'),
     };
@@ -76,6 +76,7 @@ export class UI {
     this.el.menuDescription.textContent = APP_DESCRIPTION;
     this.el.helpIntro.textContent = HELP.intro;
     for (const p of HELP.points) { const li = document.createElement('li'); li.textContent = p; this.el.helpList.append(li); }
+    for (const p of HELP.learn) { const li = document.createElement('li'); li.textContent = p; this.el.helpLearn.append(li); }
     this.el.infoNote.textContent = FOOTNOTE;
     for (let i = 1; i <= 5; i += 1) {
       const s = document.createElement('button');

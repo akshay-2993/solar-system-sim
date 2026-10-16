@@ -10,8 +10,9 @@ import moonUrl from './assets/textures/moon.jpg';
 import marsUrl from './assets/textures/mars.jpg';
 import mercuryUrl from './assets/textures/mercury.jpg';
 import jupiterUrl from './assets/textures/jupiter.jpg';
+import earthCloudsUrl from './assets/textures/earth-clouds.jpg';
 
-const TEXTURE_URLS = { earth: earthDayUrl, earthNight: earthNightUrl, moon: moonUrl, mars: marsUrl, mercury: mercuryUrl, jupiter: jupiterUrl };
+const TEXTURE_URLS = { earth: earthDayUrl, earthNight: earthNightUrl, earthClouds: earthCloudsUrl, moon: moonUrl, mars: marsUrl, mercury: mercuryUrl, jupiter: jupiterUrl };
 
 const SUN_VERT = `
 varying vec3 vObj; varying vec3 vN; varying vec3 vV;
@@ -74,6 +75,14 @@ void main(){ vC = color; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_Poin
 const STAR_FRAG = `
 varying vec3 vC;
 void main(){ vec2 c = gl_PointCoord - 0.5; float d = length(c)*2.0; float a = smoothstep(1.0, 0.25, d); gl_FragColor = vec4(vC, a); }`;
+
+const BELT_VERT = `
+uniform float uPR; uniform float uSize; uniform float uHalfH;
+void main(){ vec4 mv = modelViewMatrix * vec4(position,1.0); float d = max(0.001, -mv.z);
+  gl_PointSize = clamp(uSize * uHalfH / d, 1.2, 4.5) * uPR; gl_Position = projectionMatrix * mv; }`;
+const BELT_FRAG = `
+uniform vec3 uColor; uniform float uOpacity;
+void main(){ float r = length(gl_PointCoord - 0.5) * 2.0; if (r > 1.0) discard; float a = smoothstep(1.0, 0.35, r) * uOpacity; gl_FragColor = vec4(uColor, a); }`;
 
 const smootherstep = (x) => { const t = THREE.MathUtils.clamp(x, 0, 1); return t * t * t * (t * (t * 6 - 15) + 10); };
 
@@ -166,9 +175,15 @@ export class SolarScene {
       }
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      const mat = new THREE.PointsMaterial({ size, color, transparent: true, opacity, depthWrite: false, sizeAttenuation: true });
-      return new THREE.Points(geo, mat);
+      const mat = new THREE.ShaderMaterial({
+        uniforms: { uPR: { value: 1 }, uSize: { value: size }, uHalfH: { value: 400 }, uColor: { value: new THREE.Color(color) }, uOpacity: { value: opacity } },
+        vertexShader: BELT_VERT, fragmentShader: BELT_FRAG, transparent: true, depthWrite: false,
+      });
+      const pts = new THREE.Points(geo, mat);
+      this.beltMaterials.push(mat);
+      return pts;
     };
+    this.beltMaterials = [];
     this.scene.add(belt(3200, 2.1, 3.3, 0.012, 0.6, 0xd8d2e8, 1234));
     this.scene.add(belt(2400, 30, 50, 0.024, 0.3, 0xb4c0e8, 999));
   }
@@ -270,9 +285,9 @@ export class SolarScene {
   }
 
   _buildCones() {
-    const geo = new THREE.CylinderGeometry(0.15, 0.9, 1, 40, 1, true);
-    geo.translate(0, -0.5, 0); // base at origin, extending along -y
-    const coneMat = () => new THREE.MeshBasicMaterial({ color: 0xffc857, transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, toneMapped: false });
+    const geo = new THREE.CylinderGeometry(1, 0.34, 1, 48, 1, true);
+    geo.translate(0, -0.5, 0); // wide end at the shadowing body, narrowing along -y
+    const coneMat = () => new THREE.MeshBasicMaterial({ color: 0x9aa0e6, transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
     this.solarCone = new THREE.Mesh(geo, coneMat());
     this.lunarCone = new THREE.Mesh(geo, coneMat());
     this.solarCone.visible = false; this.lunarCone.visible = false;
@@ -289,7 +304,7 @@ export class SolarScene {
       try {
         const tex = await loadTex(url);
         tex.colorSpace = THREE.SRGBColorSpace;
-        tex.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
+        tex.anisotropy = Math.min(16, this.renderer.capabilities.getMaxAnisotropy());
         if (key === 'mercury') {
           const canvas = proc.fillBlackGaps(tex.image);
           const t2 = new THREE.CanvasTexture(canvas);
@@ -311,7 +326,22 @@ export class SolarScene {
       const tex = textures[key];
       if (tex) { entry.mat.map = tex; entry.mat.needsUpdate = true; }
       if (key === 'earth' && textures.earthNight) { entry.mat.emissiveMap = textures.earthNight; entry.mat.emissiveIntensity = 1; entry.mat.needsUpdate = true; }
+      if (key === 'earth' && tex) {
+        // Oceans are smoother than land, so sunlight glints off them.
+        entry.mat.roughnessMap = proc.oceanRoughnessMap(tex.image);
+        entry.mat.roughness = 1;
+        entry.mat.needsUpdate = true;
+        if (textures.earthClouds) {
+          const cm = new THREE.MeshStandardMaterial({ color: 0xffffff, alphaMap: textures.earthClouds, transparent: true, depthWrite: false, roughness: 1, metalness: 0, opacity: 0.9 });
+          const clouds = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), cm);
+          clouds.scale.setScalar(1.012);
+          entry.surface.add(clouds);
+          entry.clouds = clouds;
+        }
+      }
+      if ((key === 'mercury' || key === 'mars') && tex) { entry.mat.bumpMap = tex; entry.mat.bumpScale = entry.radius * 0.02; entry.mat.needsUpdate = true; }
     }
+    if (textures.moon) { this.moonMat.bumpMap = textures.moon; this.moonMat.bumpScale = this.moonRadius * 0.03; }
     if (textures.moon) { this.moonMat.map = textures.moon; this.moonMat.needsUpdate = true; }
     this.textures = textures;
   }
@@ -323,6 +353,7 @@ export class SolarScene {
     this.camera.updateProjectionMatrix();
     this.width = width; this.height = height;
     this.stars.material.uniforms.uPR.value = dpr;
+    for (const m of this.beltMaterials) { m.uniforms.uPR.value = dpr; m.uniforms.uHalfH.value = height / 2; }
   }
 
   setOrbitPaths(visible) { this.orbitPathsVisible = visible; }
@@ -349,6 +380,7 @@ export class SolarScene {
         const step = Math.sign(want) * Math.min(Math.abs(want), maxStep);
         e.surface.rotation.y = (e.surface.rotation.y + step) % (Math.PI * 2);
       }
+      if (e.clouds) e.clouds.rotation.y = (e.clouds.rotation.y + playingSimDays * 0.6 + dtReal * 0.004) % (Math.PI * 2);
       if (e.atmo) e.atmo.material.uniforms.uSunDir.value.copy(e.pos).negate().normalize();
       if (key === 'earth') {
         this.earthPos.copy(e.pos);
@@ -419,10 +451,10 @@ export class SolarScene {
     const lunar = ev?.kind === 'lunar' ? p : 0;
     this.moonMat.color.setRGB(1 - 0.2 * lunar, 1 - 0.58 * lunar, 1 - 0.68 * lunar);
     if (ev?.kind === 'solar' && p > 0.02) {
-      this._placeCone(this.solarCone, 0.16 * p, this.moonRadius, this.moonPos.distanceTo(E) + this.earthRadius, this.moonPos, E);
+      this._placeCone(this.solarCone, 0.22 * p, this.moonRadius, this.moonPos.distanceTo(E) + this.earthRadius, this.moonPos, E);
     } else this.solarCone.visible = false;
     if (ev?.kind === 'lunar' && p > 0.02) {
-      this._placeCone(this.lunarCone, 0.11 * p, this.earthRadius, 1.45 * this.moonRing, E, this.moonPos);
+      this._placeCone(this.lunarCone, 0.2 * p, this.earthRadius, 1.3 * this.moonRing, E, this.moonPos);
     } else this.lunarCone.visible = false;
   }
 
@@ -448,6 +480,15 @@ export class SolarScene {
   render() {
     this.updateCameraClipping();
     this.renderer.render(this.scene, this.camera);
+  }
+
+  // World-space unit vector from Earth's centre through a surface point (degrees).
+  earthSurfaceDirection(latDeg, lonDeg) {
+    const e = this.planets.get('earth');
+    const lat = THREE.MathUtils.degToRad(latDeg), lon = THREE.MathUtils.degToRad(lonDeg);
+    const v = new THREE.Vector3(Math.cos(lat) * Math.cos(lon), Math.sin(lat), -Math.cos(lat) * Math.sin(lon));
+    v.applyAxisAngle(new THREE.Vector3(0, 1, 0), e.surface.rotation.y);
+    return v.applyQuaternion(e.orient.quaternion).normalize();
   }
 
   bodyWorldPosition(key) {
@@ -559,8 +600,8 @@ export class Thumbnailer {
     this.camera.position.set(0, 0, key === 'saturn' ? 7.4 : 5.4);
     this.holder.add(mesh);
     if (lightAngle !== null) {
-      // Light from the direction of the Sun as seen from the Moon: angle 0 = behind viewer (full), PI = behind the Moon (new).
-      this.light.position.set(Math.sin(lightAngle) * 5, 0.4, Math.cos(lightAngle) * 5);
+      // Phase angle: 0 = new Moon (Sun behind the Moon), PI = full Moon (Sun behind the viewer).
+      this.light.position.set(Math.sin(lightAngle) * 5, 0.4, -Math.cos(lightAngle) * 5);
       this.light.intensity = 3.2;
     } else {
       this.light.position.set(-3, 2, 4);

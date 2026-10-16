@@ -19,6 +19,28 @@ const state = {
   hover: null,
 };
 
+// Where the student probably is, from the device time zone (approximate centre of the region).
+const ZONES = {
+  'Asia/Kolkata': [21, 78], 'Asia/Calcutta': [21, 78], 'Asia/Karachi': [30, 70], 'Asia/Dhaka': [24, 90], 'Asia/Colombo': [7, 81], 'Asia/Kathmandu': [28, 84],
+  'Asia/Dubai': [24, 54], 'Asia/Riyadh': [24, 45], 'Asia/Singapore': [1.3, 103.8], 'Asia/Jakarta': [-6, 107], 'Asia/Manila': [13, 122], 'Asia/Bangkok': [15, 101],
+  'Asia/Tokyo': [36, 138], 'Asia/Seoul': [37, 127], 'Asia/Shanghai': [35, 105], 'Asia/Hong_Kong': [22, 114],
+  'Europe/London': [52, -1], 'Europe/Paris': [47, 2], 'Europe/Berlin': [51, 10], 'Europe/Madrid': [40, -3], 'Europe/Rome': [42, 12], 'Europe/Moscow': [55, 37],
+  'America/New_York': [40, -75], 'America/Toronto': [44, -79], 'America/Chicago': [40, -90], 'America/Denver': [40, -105], 'America/Los_Angeles': [37, -120],
+  'America/Mexico_City': [23, -102], 'America/Sao_Paulo': [-15, -50], 'America/Argentina/Buenos_Aires': [-34, -64],
+  'Australia/Sydney': [-33, 150], 'Australia/Melbourne': [-37, 145], 'Australia/Perth': [-31, 116], 'Pacific/Auckland': [-40, 174],
+  'Africa/Johannesburg': [-28, 25], 'Africa/Lagos': [8, 5], 'Africa/Nairobi': [-1, 37], 'Africa/Cairo': [27, 30],
+};
+function observerRegion() {
+  let zone = '';
+  try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { /* ignore */ }
+  if (ZONES[zone]) return { lat: ZONES[zone][0], lon: ZONES[zone][1], zone };
+  const lon = (-new Date().getTimezoneOffset() / 60) * 15;
+  return { lat: 20, lon, zone };
+}
+const observer = observerRegion();
+let lastInteraction = performance.now();
+const touch = () => { lastInteraction = performance.now(); };
+
 const canvas = document.getElementById('sky');
 const stage = document.getElementById('stage');
 const scene = new SolarScene(canvas);
@@ -90,7 +112,11 @@ function focusPosition() {
 }
 
 function selectBody(key, { side = 1, reframe = false } = {}) {
+  touch();
   const wasFocus = state.focus;
+  const wasSelected = state.selected;
+  // Earth and the Moon share a focus but use different framings.
+  if (wasFocus === 'earth' && key !== wasSelected && (key === 'earth' || key === 'moon')) reframe = true;
   state.selected = key;
   scene.setSelected(key);
   ui.paintSelection(key);
@@ -101,12 +127,15 @@ function selectBody(key, { side = 1, reframe = false } = {}) {
     state.view = 'planet';
     scene.setViewMode('planet');
     ui.paintView('planet');
-    rig.flyToBody(focusKey, scene.bodyRadius(focusKey), () => scene.bodyWorldPosition(focusKey).clone(), { side });
+    // Earth opens above the student's own region; the Moon opens side-on so its place relative to the Sun reads.
+    const overDir = key === 'earth' && side === 1 ? scene.earthSurfaceDirection(observer.lat, observer.lon) : null;
+    rig.flyToBody(focusKey, scene.bodyRadius(focusKey), () => scene.bodyWorldPosition(focusKey).clone(), { side: key === 'moon' && side === 1 ? 0 : side, overDir });
     sound.whoosh();
   }
 }
 
 function backToSystem() {
+  touch();
   if (state.view === 'system') return;
   state.focus = null;
   state.view = 'system';
@@ -136,8 +165,10 @@ window.addEventListener('orientationchange', () => setTimeout(resize, 120));
 let pointerDown = null;
 let moonDrag = null;
 let lastMouse = null;
+canvas.addEventListener('wheel', touch, { passive: true });
 canvas.addEventListener('pointerdown', (e) => {
   sound.unlock();
+  touch();
   pointerDown = { id: e.pointerId, x: e.clientX, y: e.clientY, type: e.pointerType };
   const r = canvas.getBoundingClientRect();
   const hit = scene.pick(e.clientX - r.left, e.clientY - r.top, state.focus === 'earth');
@@ -165,6 +196,7 @@ canvas.addEventListener('pointermove', (e) => {
     if (Math.hypot(e.clientX - pointerDown.x, e.clientY - pointerDown.y) > (pointerDown.type === 'touch' ? 10 : 5)) pointerDown.moved = true;
   }
   if (e.pointerType !== 'touch') lastMouse = { x: px, y: py };
+  if (pointerDown || moonDrag) touch();
 });
 
 const endPointer = (e) => {
@@ -207,6 +239,10 @@ function frame(now) {
     else state.t = next;
   }
   scene.update(state.t, dt, simDays);
+  // Gentle drift of the view when nobody has touched it for a while.
+  const idle = now - lastInteraction > 3000 && !rig.isTransitioning() && !pointerDown && !moonDrag && !scene.reducedMotion;
+  scene.controls.autoRotate = idle;
+  scene.controls.autoRotateSpeed = state.view === 'system' ? 0.25 : 0.4;
   rig.update(focusPosition());
   if (rig.isTransitioning()) scene.update(state.t, 0, 0); // refresh marker sizes for the moved camera
   scene.render();
@@ -228,6 +264,13 @@ function frame(now) {
     ui.placeLabel(ui.el.pinEarth, hover === 'earth' ? null : scene.project(scene.earthPos.clone().add(new THREE.Vector3(0, er * 1.5, 0))));
     ui.placeLabel(ui.el.pinMoon, hover === 'moon' ? null : scene.project(scene.moonPos.clone().add(new THREE.Vector3(0, mr * 2.2, 0))));
   } else { ui.el.pinEarth.hidden = true; ui.el.pinMoon.hidden = true; }
+  // "You are here" pin on Earth
+  if (earthMoon) {
+    const dir = scene.earthSurfaceDirection(observer.lat, observer.lon);
+    const camDir = scene.camera.position.clone().sub(scene.earthPos).normalize();
+    const facing = dir.dot(camDir) > 0.15;
+    ui.placeLabel(ui.el.pinHere, facing ? scene.project(scene.earthPos.clone().addScaledVector(dir, scene.bodyRadius('earth') * 1.02)) : null);
+  } else ui.el.pinHere.hidden = true;
 }
 
 // ---- Boot ----
@@ -246,7 +289,7 @@ scene.load().then(() => {
   ui.setLoading(true);
   thumbs = new Thumbnailer(scene);
   const map = {};
-  for (const key of BODIES) map[key] = thumbs.render(key, 112, key === 'moon' ? { lightAngle: 0.2 } : {});
+  for (const key of BODIES) map[key] = thumbs.render(key, 112, key === 'moon' ? { lightAngle: Math.PI - 0.7 } : {});
   ui.setThumbnails(map);
   thumbsDone = true;
 }).catch((err) => {

@@ -135,6 +135,13 @@ export const APP_DESCRIPTION =
 export const HELP = {
   intro:
     'This is a 3D model of the solar system tied to the real calendar. Pick any date and each planet appears where it truly is. Open Earth or the Moon to see the Moon’s phases and eclipses up close.',
+  learn: [
+    'Where each planet really is on any date, and why the inner planets lap the Sun much faster than the outer ones.',
+    'How big the planets are compared with the Sun, and how empty the space between them is.',
+    'Why we have day and night: Earth turns once a day, and the half facing the Sun is lit. The pin shows your own region.',
+    'Why the Moon shows phases: the sunlit half of the Moon is always there, we just see different amounts of it as it circles Earth.',
+    'Why eclipses are rare: the Moon\u2019s path is tilted, so it only lines up exactly with the Sun and Earth a few times a year.',
+  ],
   points: [
     'Press play to let time run, or drag the strip at the bottom to move through time by hand. Day, Month and Year set how fast time moves, and Today jumps back to the real date.',
     'Drag the sky to turn the view and scroll or pinch to zoom. Tap the Sun or a planet for a close-up. Tapping Earth or the Moon opens the Earth–Moon view, where you can hold the Moon and pull it around Earth to change its phase day by day.',

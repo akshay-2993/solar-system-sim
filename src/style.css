@@ -169,6 +169,10 @@ svg { display: block; }
   font-size: 0.74rem; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap;
 }
 .label--pinned { opacity: 0.92; }
+.label--here { background: var(--cyan); color: #06202a; border-color: var(--cyan); transform: translate(-50%, -100%) translateY(-0.5rem); }
+.label--here::after { content: ''; position: absolute; left: 50%; bottom: -0.45rem; width: 0.5rem; height: 0.5rem; margin-left: -0.25rem; background: var(--cyan); transform: rotate(45deg); }
+.card__sub { margin: 1rem 0 0.5rem; font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
+.helplist--learn li::before { background: var(--violet); }
 
 /* Time bar */
 .timebar {

@@ -19,9 +19,13 @@ export function systemPreset(aspect) {
 }
 
 // Close-up preset: on the Sun-facing side, 7° above the orbital plane.
-export function planetPreset(key, radius, worldPos, side = 1, fromDir = null) {
+export function planetPreset(key, radius, worldPos, side = 1, fromDir = null, overDir = null) {
   const saturn = key === 'saturn';
   const elevation = saturn ? THREE.MathUtils.degToRad(22) : ELEVATION;
+  if (overDir) {
+    // Straight above a surface point (the student's own region), so day and night read at home.
+    return { offset: overDir.clone().normalize().multiplyScalar(radius * 7.6), minDistance: radius * 1.55, maxDistance: radius * 12 };
+  }
   const r = new THREE.Vector3(-worldPos.x, -worldPos.y, -worldPos.z);
   // The Sun sits at the origin: approach it from wherever the camera already is.
   if (r.lengthSq() === 0) { if (fromDir) r.copy(fromDir).setY(0); if (r.lengthSq() === 0) r.set(0, 0, 1); }
@@ -95,10 +99,10 @@ export class CameraRig {
   }
 
   // getFocus(): current world position of the destination body (it keeps moving while time plays).
-  flyToBody(key, radius, getFocus, { side = 1 } = {}) {
+  flyToBody(key, radius, getFocus, { side = 1, overDir = null } = {}) {
     const kind = this.focusKey === key ? 'reframe' : this.focusKey ? 'planet-to-planet' : 'system-to-planet';
     const pos = getFocus();
-    const preset = planetPreset(key, radius, pos, side, this.camera.position.clone().sub(this.controls.target));
+    const preset = planetPreset(key, radius, pos, side, this.camera.position.clone().sub(this.controls.target), overDir);
     this.focusKey = key;
     this.focusOffset.copy(preset.offset);
     this.limits = { min: preset.minDistance, max: preset.maxDistance };

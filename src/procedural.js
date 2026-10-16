@@ -75,7 +75,8 @@ function gasGiant({ width, height, seed, bands, warp, turbulence, grain, stops, 
     let lat = v + w * 0.08 + turb * 0.02;
     let band = 0;
     for (const b of bands) band += b.amp * Math.sin(lat * Math.PI * 2 * b.freq + b.phase);
-    let tone = clamp01(0.5 + band + (fbm(noise, u * period * 8 + 3, v * 24, period * 8, 3) - 0.5) * grain);
+    const swirl = (fbm(noise, u * period * 14 + 5 + turb * 2, v * 40 + w * 3, period * 14, 4) - 0.5) * grain * 1.6;
+    let tone = clamp01(0.5 + band + (fbm(noise, u * period * 8 + 3, v * 24, period * 8, 3) - 0.5) * grain + swirl);
     let rgb = stops[0].c;
     for (let i = 1; i < stops.length; i += 1) {
       const s0 = stops[i - 1], s1 = stops[i];
@@ -280,4 +281,26 @@ export function starField(count = 9000, radius = 140) {
   geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
   geo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
   return geo;
+}
+
+// Roughness map from the day texture: blue-dominant pixels (ocean) are smooth, land is rough.
+export function oceanRoughnessMap(image) {
+  const w = 1024, h = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(image, 0, 0, w, h);
+  const img = ctx.getImageData(0, 0, w, h);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    const ocean = b > r * 1.25 && b > g * 1.05 && b > 28;
+    const ice = r > 200 && g > 200 && b > 200;
+    const v = ocean ? 70 : ice ? 150 : 235;
+    d[i] = v; d[i + 1] = v; d[i + 2] = v; d[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.NoColorSpace;
+  return tex;
 }
